@@ -1,5 +1,5 @@
 #!/bin/bash
-
+# cd modernbank-demo
 # 환경 변수 설정 (없을 경우 스크립트 종료)
 if [ -z "$AWS_ACCOUNT_ID" ] || [ -z "$AWS_REGION" ]; then
     echo "Error: AWS_ACCOUNT_ID 또는 AWS_REGION 환경변수가 설정되지 않았습니다."
@@ -15,6 +15,7 @@ if [ ! -d "k8s" ]; then
     exit 1
 fi
 
+cd modernbank-demo
 # 모든 yaml 파일 찾기 및 처리
 find k8s -type f -name "*.yaml" -o -name "*.yml" | while read file; do
     echo "처리중인 파일: $file"    
@@ -45,11 +46,11 @@ CONFIG_FILE="k8s/service-cm.yaml"
 # OUTPUT_FILE="k8s/service-cm-updated.yaml"
 
 # 각 서비스의 엔드포인트 조회
-ACCOUNT_ENDPOINT=$(aws rds describe-db-instances --query "DBInstances[?DBInstanceIdentifier=='modernbank-account-instance-1'].Endpoint.Address" --output text)
-CQRS_ENDPOINT=$(aws rds describe-db-instances --query "DBInstances[?DBInstanceIdentifier=='modernbank-cqrs-instance-1'].Endpoint.Address" --output text)
-CUSTOMER_ENDPOINT=$(aws rds describe-db-instances --query "DBInstances[?DBInstanceIdentifier=='modernbank-customer-instance-1'].Endpoint.Address" --output text)
-TRANSFER_ENDPOINT=$(aws rds describe-db-instances --query "DBInstances[?DBInstanceIdentifier=='modernbank-transfer-instance-1'].Endpoint.Address" --output text)
-USER_ENDPOINT=$(aws rds describe-db-instances --query "DBInstances[?DBInstanceIdentifier=='modernbank-user-instance-1'].Endpoint.Address" --output text)
+ACCOUNT_ENDPOINT=$(aws rds describe-db-instances --query "DBInstances[?DBClusterIdentifier=='modernbank-account' && PromotionTier==\`0\`].Endpoint.Address" --output text)
+CQRS_ENDPOINT=$(aws rds describe-db-instances --query "DBInstances[?DBClusterIdentifier=='modernbank-cqrs' && PromotionTier==\`0\`].Endpoint.Address" --output text)
+CUSTOMER_ENDPOINT=$(aws rds describe-db-instances --query "DBInstances[?DBClusterIdentifier=='modernbank-customer' && PromotionTier==\`0\`].Endpoint.Address" --output text)
+TRANSFER_ENDPOINT=$(aws rds describe-db-instances --query "DBInstances[?DBClusterIdentifier=='modernbank-transfer' && PromotionTier==\`0\`].Endpoint.Address" --output text)
+USER_ENDPOINT=$(aws rds describe-db-instances --query "DBInstances[?DBClusterIdentifier=='modernbank-user' && PromotionTier==\`0\`].Endpoint.Address" --output text)
 
 # 도메인 부분만 추출 (포트 제거)
 ACCOUNT_ENDPOINT=${ACCOUNT_ENDPOINT%:*}
@@ -64,7 +65,7 @@ CLUSTER_ARN=$(aws kafka list-clusters --query 'ClusterInfoList[?ClusterName==`co
 # 브로커 주소 가져오기 (PLAINTEXT 리스너)
 BROKER_STRING=$(aws kafka get-bootstrap-brokers \
     --cluster-arn "$CLUSTER_ARN" \
-    --query 'BootstrapBrokerString' \
+    --query 'BootstrapBrokerString || BootstrapBrokerStringTls' \
     --output text)
 
 # RDB 엔드포인트 출력

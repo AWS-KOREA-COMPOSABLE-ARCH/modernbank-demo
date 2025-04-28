@@ -28,19 +28,29 @@
 set -e
 
 export AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query "Account" --output text)
-TOKEN=$(curl -s -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")
+export TOKEN=$(curl -s -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")
 export AWS_REGION=$(curl -s -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/dynamic/instance-identity/document | jq -r '.region')
 export ECR_REPO=${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com
 
-if grep -q "^export AWS_REGION=" ~/.bash_profile; then
-    echo "export AWS_REGION=${AWS_REGION}" | sed -i.bak '/^export AWS_REGION=/c\' ~/.bash_profile
+if grep -q "^export AWS_REGION=" ~/.bashrc; then
+    echo "export AWS_REGION=${AWS_REGION}" | sed -i.bak '/^export AWS_REGION=/c\' ~/.bashrc
 fi
-echo "export AWS_REGION=${AWS_REGION}" >> ~/.bash_profile
+echo "export AWS_REGION=${AWS_REGION}" >> ~/.bashrc
 
-if grep -q "^export AWS_ACCOUNT_ID=" ~/.bash_profile; then
-    echo "export AWS_ACCOUNT_ID=${AWS_ACCOUNT_ID}" | sed -i.bak '/^export AWS_ACCOUNT_ID=/c\' ~/.bash_profile
+if grep -q "^export AWS_ACCOUNT_ID=" ~/.bashrc; then
+    echo "export AWS_ACCOUNT_ID=${AWS_ACCOUNT_ID}" | sed -i.bak '/^export AWS_ACCOUNT_ID=/c\' ~/.bashrc
 fi
-echo "export AWS_ACCOUNT_ID=${AWS_ACCOUNT_ID}" >> ~/.bash_profile
+echo "export AWS_ACCOUNT_ID=${AWS_ACCOUNT_ID}" >> ~/.bashrc
+
+if grep -q "^export ECR_REPO=" ~/.bashrc; then
+    echo "export ECR_REPO=${ECR_REPO}" | sed -i.bak '/^export ECR_REPO=/c\' ~/.bashrc
+fi
+echo "export ECR_REPO=${ECR_REPO}" >> ~/.bashrc
+
+# if grep -q "^export JAVA_HOME=" ~/.bashrc; then
+#     echo "export JAVA_HOME=${JAVA_HOME}" | sed -i.bak '/^export JAVA_HOME=/c\' ~/.bashrc
+# fi
+# echo "export JAVA_HOME=${JAVA_HOME}" >> ~/.bashrc
 
 echo "account_id=${AWS_ACCOUNT_ID}, region=${AWS_REGION}"
 

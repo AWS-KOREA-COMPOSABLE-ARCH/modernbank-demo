@@ -30,10 +30,5 @@ kubectl create namespace modernbank
 
 aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${AWS_ACCOUNT_ID}.dkr.ecr.ap-northeast-2.amazonaws.com
 
-# aws ecr create-repository --repository-name modernbank-account --region ${AWS_REGION}
-# aws ecr create-repository --repository-name modernbank-b2bt --region ${AWS_REGION}
-# aws ecr create-repository --repository-name modernbank-customer --region ${AWS_REGION}
-# aws ecr create-repository --repository-name modernbank-cqrs --region ${AWS_REGION}
-# aws ecr create-repository --repository-name modernbank-transfer --region ${AWS_REGION}
-# aws ecr create-repository --repository-name modernbank-product --region ${AWS_REGION}
-# aws ecr create-repository --repository-name modernbank-user --region ${AWS_REGION}
+# git clone https://github.com/AWS-KOREA-COMPOSABLE-ARCH/modernbank-demo
+find . -name "containerize.sh" -type f -exec sed -i '/AWS_ACCOUNT_ID=/d; /AWS_REGION=/d; /ECR_REPO=/d' {} +

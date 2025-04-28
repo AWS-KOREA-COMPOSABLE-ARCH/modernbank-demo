@@ -53,5 +53,4 @@ sudo service docker start
 sudo usermod -a -G docker ec2-user
 
 # Install Java
-sudo yum install -y java-17-amazon-corretto-headless
-sudo yum install -y java-21-amazon-corretto-headless
+sudo yum install -y java-17-amazon-corretto-devel
