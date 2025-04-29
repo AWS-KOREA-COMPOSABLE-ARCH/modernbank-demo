@@ -94,15 +94,15 @@ sudo npm install -g forever
 echo "Creating .env.development file..."
 cat << EOL > \${APP_DIR}/.env.development
 # Common API base URL
-NEXT_PUBLIC_API_BASE_URL=http://$INGRESS_ADDRESS
+NEXT_PUBLIC_API_BASE_URL=http://$INGRESS_ADDRESS/modernbank
 
 # Service endpoints
-NEXT_PUBLIC_AUTH=http://$INGRESS_ADDRESS/user
-NEXT_PUBLIC_CUSTOMER=http://$INGRESS_ADDRESS/customer
-NEXT_PUBLIC_TRANSFER=http://$INGRESS_ADDRESS/transfer
-NEXT_PUBLIC_ACCOUNT=http://$INGRESS_ADDRESS/account
-NEXT_PUBLIC_CQRS=http://$INGRESS_ADDRESS/cqrs
-NEXT_PUBLIC_PRODUCT=http://$INGRESS_ADDRESS/product
+NEXT_PUBLIC_AUTH=http://$INGRESS_ADDRESS/modernbank/user
+NEXT_PUBLIC_CUSTOMER=http://$INGRESS_ADDRESS/modernbank/customer
+NEXT_PUBLIC_TRANSFER=http://$INGRESS_ADDRESS/modernbank/transfer
+NEXT_PUBLIC_ACCOUNT=http://$INGRESS_ADDRESS/modernbank/account
+NEXT_PUBLIC_CQRS=http://$INGRESS_ADDRESS/modernbank/cqrs
+NEXT_PUBLIC_PRODUCT=http://$INGRESS_ADDRESS/modernbank/product
 EOL
 
 # Set proper ownership for the env file
