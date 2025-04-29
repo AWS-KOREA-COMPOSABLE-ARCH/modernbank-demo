@@ -104,6 +104,13 @@ EOL
 # Set proper ownership for the env file
 chown ubuntu:ubuntu \${APP_DIR}/.env.development
 
+# Add ubuntu user to sudo group and configure passwordless sudo for systemctl
+usermod -aG sudo ubuntu
+echo "ubuntu ALL=(ALL) NOPASSWD: /bin/systemctl start modernbank-ui.service" >> /etc/sudoers.d/ubuntu
+echo "ubuntu ALL=(ALL) NOPASSWD: /bin/systemctl stop modernbank-ui.service" >> /etc/sudoers.d/ubuntu
+echo "ubuntu ALL=(ALL) NOPASSWD: /bin/systemctl restart modernbank-ui.service" >> /etc/sudoers.d/ubuntu
+echo "ubuntu ALL=(ALL) NOPASSWD: /bin/systemctl status modernbank-ui.service" >> /etc/sudoers.d/ubuntu
+
 # Create systemd service file
 echo "Creating systemd service..."
 cat << EOL > /etc/systemd/system/modernbank-ui.service
@@ -133,14 +140,15 @@ chown -R ubuntu:ubuntu \${APP_DIR}
 echo "Enabling and starting systemd service..."
 systemctl daemon-reload
 systemctl enable modernbank-ui.service
-systemctl start modernbank-ui.service
+
+# Start the service as ubuntu user
+su - ubuntu -c "sudo systemctl start modernbank-ui.service"
 
 # Wait for the service to start
 sleep 10
 
 # Check service status
-echo "Service status:"
-systemctl status modernbank-ui.service
+su - ubuntu -c "sudo systemctl status modernbank-ui.service"
 EOF
 
 chmod +x ./front_userdata.sh
