@@ -84,6 +84,7 @@ su - ubuntu -c "
     cp -r /home/ubuntu/modernbank-demo/modernbank_ui/* \${APP_DIR}/
     cd \${APP_DIR}
     npm ci
+    npm install -g forever
 "
 
 # Create environment variable file
@@ -104,42 +105,6 @@ EOL
 # Set proper ownership for the env file
 chown ubuntu:ubuntu \${APP_DIR}/.env.development
 
-# Add ubuntu user to sudo group and configure passwordless sudo for systemctl
-usermod -aG sudo ubuntu
-echo "ubuntu ALL=(ALL) NOPASSWD: /bin/systemctl start modernbank-ui.service" >> /etc/sudoers.d/ubuntu
-echo "ubuntu ALL=(ALL) NOPASSWD: /bin/systemctl stop modernbank-ui.service" >> /etc/sudoers.d/ubuntu
-echo "ubuntu ALL=(ALL) NOPASSWD: /bin/systemctl restart modernbank-ui.service" >> /etc/sudoers.d/ubuntu
-echo "ubuntu ALL=(ALL) NOPASSWD: /bin/systemctl status modernbank-ui.service" >> /etc/sudoers.d/ubuntu
-
-# Create systemd service file
-echo "Creating systemd service..."
-cat << EOL > /etc/systemd/system/modernbank-ui.service
-[Unit]
-Description=ModernBank UI Next.js Application
-After=network.target
-
-[Service]
-Type=simple
-User=ubuntu
-WorkingDirectory=${APP_DIR}
-Environment=NODE_ENV=development
-Environment=PORT=3000
-Environment=HOME=/home/ubuntu
-Environment=PATH=/usr/bin:/usr/local/bin:\$PATH
-ExecStart=/usr/bin/node /usr/bin/npm run dev
-StandardOutput=append:/var/log/modernbank-ui.log
-StandardError=append:/var/log/modernbank-ui.error.log
-Restart=always
-RestartSec=10
-
-[Install]
-WantedBy=multi-user.target
-EOL
-
-# Create log files and set permissions
-touch /var/log/modernbank-ui.log /var/log/modernbank-ui.error.log
-chown ubuntu:ubuntu /var/log/modernbank-ui.log /var/log/modernbank-ui.error.log
-
 # Set proper permissions
 chown -R ubuntu:ubuntu \${APP_DIR}
 chmod -R 755 \${APP_DIR}
@@ -148,25 +113,25 @@ chmod -R 755 \${APP_DIR}
 mkdir -p /home/ubuntu/.npm
 chown -R ubuntu:ubuntu /home/ubuntu/.npm
 
-# Create a script to run the application
+# Create a startup script
 cat << EOL > \${APP_DIR}/start.sh
 #!/bin/bash
 cd \${APP_DIR}
 export NODE_ENV=development
 export PORT=3000
-npm run dev
+forever start -c "npm run dev" ./
 EOL
 
 chmod +x \${APP_DIR}/start.sh
 chown ubuntu:ubuntu \${APP_DIR}/start.sh
 
-# Modify the service to use the start script
-sed -i "s|ExecStart=/usr/bin/node /usr/bin/npm run dev|ExecStart=/bin/bash ${APP_DIR}/start.sh|" /etc/systemd/system/modernbank-ui.service
+# Run the application as ubuntu user
+su - ubuntu -c "cd \${APP_DIR} && ./start.sh"
 
-# Reload systemd and restart service
-systemctl daemon-reload
-systemctl restart modernbank-ui.service
+# Add the start script to ubuntu user's crontab for restart on reboot
+(crontab -u ubuntu -l 2>/dev/null; echo "@reboot /opt/modernbank_ui/start.sh") | crontab -u ubuntu -
 EOF
+
 
 chmod +x ./front_userdata.sh
 
