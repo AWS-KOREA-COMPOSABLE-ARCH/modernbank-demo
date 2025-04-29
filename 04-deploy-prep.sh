@@ -15,7 +15,7 @@ if [ ! -d "k8s" ]; then
     exit 1
 fi
 
-cd modernbank-demo
+# cd modernbank-demo
 # 모든 yaml 파일 찾기 및 처리
 find k8s -type f -name "*.yaml" -o -name "*.yml" | while read file; do
     echo "처리중인 파일: $file"    
