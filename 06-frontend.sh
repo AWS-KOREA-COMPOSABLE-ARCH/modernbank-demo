@@ -8,7 +8,7 @@ KEY_PAIR_NAME="modernbank-ui-key"
 SECURITY_GROUP_DESCRIPTION="Security group for ModernBank UI"
 
 # Fetch the VPC ID
-VPC_ID=$(aws ec2 describe-vpcs --filters "Name=tag:Name,Values=cCoreBankInfraStack/CoreBankVPC" --query 'Vpcs[0].VpcId' --output text)
+VPC_ID=$(aws ec2 describe-vpcs --filters "Name=tag:Name,Values=CoreBankInfraStack/CoreBankVPC" --query 'Vpcs[0].VpcId' --output text)
 echo "VPC_ID=${VPC_ID}"
 
 # Check if the security group exists
@@ -27,7 +27,7 @@ if [ "$SECURITY_GROUP_ID" == "None" ]; then
 
   # Set security group rules to allow inbound traffic on port 3000 and 22
   aws ec2 authorize-security-group-ingress --group-id $SECURITY_GROUP_ID --protocol tcp --port 3000 --cidr 0.0.0.0/0 >/dev/null 2>&1
-  # aws ec2 authorize-security-group-ingress --group-id $SECURITY_GROUP_ID --protocol tcp --port 22 --cidr 0.0.0.0/0 >/dev/null 2>&1
+  aws ec2 authorize-security-group-ingress --group-id $SECURITY_GROUP_ID --protocol tcp --port 22 --cidr 0.0.0.0/0 >/dev/null 2>&1
 else
   echo "Security group '$SECURITY_GROUP_NAME' already exists with ID: $SECURITY_GROUP_ID"
 fi
@@ -94,7 +94,7 @@ npm ci
 
 # Create environment variable file
 echo "Creating .env.production file..."
-cat << EOL > .env.production
+cat << EOL > .env.development
 # Common API base URL
 NEXT_PUBLIC_API_BASE_URL=http://$INGRESS_ADDRESS
 
@@ -109,7 +109,7 @@ EOL
 
 # Build the Next.js application
 echo "Building Next.js application..."
-npm run build
+# npm run build
 
 # Create systemd service file
 echo "Creating systemd service..."
@@ -122,9 +122,9 @@ After=network.target
 Type=simple
 User=ubuntu
 WorkingDirectory=\${APP_DIR}
-ExecStart=/usr/bin/npm start
+ExecStart=/usr/bin/npm run dev
 Restart=on-failure
-Environment=NODE_ENV=production
+Environment=NODE_ENV=development
 Environment=PORT=3000
 
 [Install]
