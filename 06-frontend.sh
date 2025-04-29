@@ -84,8 +84,11 @@ su - ubuntu -c "
     cp -r /home/ubuntu/modernbank-demo/modernbank_ui/* \${APP_DIR}/
     cd \${APP_DIR}
     npm ci
-    npm install -g forever
 "
+
+# Install forever globally with sudo
+echo "Installing forever globally..."
+sudo npm install -g forever
 
 # Create environment variable file
 echo "Creating .env.development file..."
@@ -131,6 +134,7 @@ su - ubuntu -c "cd \${APP_DIR} && ./start.sh"
 # Add the start script to ubuntu user's crontab for restart on reboot
 (crontab -u ubuntu -l 2>/dev/null; echo "@reboot /opt/modernbank_ui/start.sh") | crontab -u ubuntu -
 EOF
+
 
 
 chmod +x ./front_userdata.sh
