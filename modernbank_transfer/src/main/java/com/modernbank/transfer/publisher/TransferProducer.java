@@ -5,6 +5,7 @@ import java.util.concurrent.CompletableFuture;
 import com.modernbank.transfer.domain.entity.TransferHistory;
 import com.modernbank.transfer.domain.entity.TransferLimit;
 import com.modernbank.transfer.exception.SystemException;
+import com.modernbank.transfer.rest.account.entity.TransactionHistory;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,7 +43,35 @@ public class TransferProducer {
     private String accountServiceUrl;
 
     public void sendB2BTransferMessage(TransferHistory transfer) {
-        // TODO
+          CompletableFuture<SendResult<String, TransferHistory>> future = transferKafkaTemplate.send(b2bTransferTopicName, transfer);
+
+        future.whenComplete((result, ex) -> {
+            if (ex == null) {
+                TransferHistory g = result.getProducerRecord().value();
+                LOGGER.info("Sent message=[" + g.getCstmId() + "] with offset=[" + result.getRecordMetadata().offset() + "]");
+            } else {
+                //만약 Amazon MSK에 타행 이체 정보 전달시 문제가 발생했다면 보상 트랜잭션 시작
+                transfer.setStsCd("2");
+                String wthdAcntNo = transfer.getWthdAcntNo();
+                int wthdAcntSeq = transfer.getWthdAcntSeq();
+
+                TransactionHistory transactionHistory = TransactionHistory.builder()
+                    .acntNo(wthdAcntNo)
+                    .seq(wthdAcntSeq)
+                    .divCd("2")
+                    .stsCd("2")
+                    .build();
+  
+                restTemplate.postForObject(
+                    accountServiceUrl + "/withdrawals/cancel/",
+                    transactionHistory,
+                    Integer.class
+                );
+
+                LOGGER.error("Unable to send message=[" + transfer.getCstmId() + "] due to : " + ex.getMessage());
+                throw new SystemException("Kafka data transmission error");
+            }
+        });
     }
     
     public void sendUpdatingTansferLimitMessage(TransferLimit transferLimit) {

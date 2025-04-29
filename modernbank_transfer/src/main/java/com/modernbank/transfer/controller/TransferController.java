@@ -37,7 +37,9 @@ public class TransferController {
     @Operation(summary = "Inter-Bank Transfer", method = "POST", description = "Inter-Bank Transfer")
     @RequestMapping(method = RequestMethod.POST, path = "/external")
     public Boolean btobTransfer(@RequestBody TransferHistory input) throws Exception{
-        // TODO
+        LOGGER.info("=====>DivCd: " + input.getDivCd() + ", StsCd:" + input.getStsCd());
+
+        return transferService.interBankTransfer(input);
     }
 
     @Operation(summary = "Retrieve Transfer History", method = "GET", description = "Retrieve Transfer History")

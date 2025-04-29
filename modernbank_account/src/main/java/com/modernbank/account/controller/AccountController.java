@@ -75,7 +75,24 @@ public class AccountController {
         return accountService.withdrawOwnBankOrTransferOtherBank(input);
     }
 
-    // TODO
+    @Operation(
+        summary = "Confirm other bank transfer result",
+        description = """
+            Process final confirmation for other bank transfer result.
+            
+            Required status codes (stsCd):
+            - "1": Confirm withdrawal - Finalizes the transfer as successful
+            - "2": Cancel withdrawal - Transfer failed, triggers compensation transaction to rollback the withdrawal
+            
+            Status code must be either "1" or "2". No other values are accepted.
+            This API is called after receiving the final transfer result from other bank.
+        """,
+        method = "POST"
+    )
+    @PostMapping("/withdrawals/confirm/")
+    public Integer processExternalTransferConfirmation(@RequestBody TransactionHistory input) throws Exception {
+        return accountService.processExternalTransferConfirmation(input);
+    }
     
     @Operation(summary = "Transaction History Inquiry", method = "GET", description = "Retrieve transaction history")
     @GetMapping("/{acntNo}/transactions")

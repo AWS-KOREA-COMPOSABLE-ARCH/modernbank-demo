@@ -44,3 +44,4 @@ modernbank-ui-key.pem
 **/node_modules/**
 **/.next/**
 
+cat 

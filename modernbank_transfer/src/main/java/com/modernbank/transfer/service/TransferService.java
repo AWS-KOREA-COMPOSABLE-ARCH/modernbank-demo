@@ -24,6 +24,8 @@ import org.springframework.web.client.RestTemplate;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.retry.annotation.Retry;
 
+
+
 @Service("transferService")
 public class TransferService {
     
@@ -166,7 +168,21 @@ public class TransferService {
     @CircuitBreaker(name = "accountService", fallbackMethod = "fallbackPerformWithdrawal")
     @Retry(name = "accountService")
     private TransactionResult performWithdrawal(String acntNo, Long amount, String branch, String divCd, String stsCd) {
-        // TODO
+        TransactionHistory.TransactionHistoryBuilder builder = TransactionHistory.builder()
+        .acntNo(acntNo)
+        .trnsAmt(amount)
+        .trnsBrnch(branch);
+
+        if (divCd != null) {
+            builder.divCd(divCd);
+        }
+        if (stsCd != null) {
+            builder.stsCd(stsCd);
+        }
+
+        TransactionHistory transaction = builder.build();
+        
+        return restTemplate.postForObject(accountServiceUrl + "/withdrawals/", transaction, TransactionResult.class);
     }
 
     private void fallbackPerformWithdrawal(String acntNo, Long amount, String branch, Exception e) {

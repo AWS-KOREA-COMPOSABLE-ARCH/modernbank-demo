@@ -8,7 +8,7 @@ KEY_PAIR_NAME="modernbank-ui-key"
 SECURITY_GROUP_DESCRIPTION="Security group for ModernBank UI"
 
 # Fetch the VPC ID
-VPC_ID=$(aws ec2 describe-vpcs --filters "Name=tag:Name,Values=core-bank-vpc" --query 'Vpcs[0].VpcId' --output text)
+VPC_ID=$(aws ec2 describe-vpcs --filters "Name=tag:Name,Values=cCoreBankInfraStack/CoreBankVPC" --query 'Vpcs[0].VpcId' --output text)
 echo "VPC_ID=${VPC_ID}"
 
 # Check if the security group exists
@@ -37,7 +37,7 @@ fi
 INGRESS_ADDRESS=$(kubectl get ingress -n modernbank -o jsonpath='{.items[0].status.loadBalancer.ingress[0].hostname}')
 echo "INGRESS_ADDRESS=${INGRESS_ADDRESS}"
 # Fetch a public subnet ID from the VPC
-SUBNET_IDS=$(aws ec2 describe-subnets --filters "Name=vpc-id,Values=${VPC_ID}" "Name=tag:Name,Values=core-bank-subnet-web-public*" --query 'Subnets[].SubnetId' --output text)
+SUBNET_IDS=$(aws ec2 describe-subnets --filters "Name=vpc-id,Values=${VPC_ID}" "Name=tag:Name,Values=CoreBankInfraStack/CoreBankVPC/core-bank-web-publicSubnet*" --query 'Subnets[].SubnetId' --output text)
 echo "SUBNET_IDS=${SUBNET_IDS}"
 
 SUBNET_ID=$(echo $SUBNET_IDS | cut -d ' ' -f 1)

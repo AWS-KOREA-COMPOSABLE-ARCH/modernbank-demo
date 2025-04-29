@@ -1,7 +1,9 @@
 package com.modernbank.transfer.subscriber;
 
 import com.modernbank.transfer.domain.entity.TransferHistory;
+import com.modernbank.transfer.exception.SystemException;
 import com.modernbank.transfer.publisher.TransferProducer;
+import com.modernbank.transfer.rest.account.entity.TransactionHistory;
 import com.modernbank.transfer.service.TransferService;
 
 import org.slf4j.Logger;
@@ -34,6 +36,35 @@ public class B2BTransferResultConsumer {
     
     @KafkaListener(topics = "${b2b.transfer.result.topic.name}", containerFactory = "b2bTransferResultKafkaListenerContainerFactory")
     public void b2bTransferResultListener(TransferHistory transferResult, Acknowledgment ack) throws Exception {
-        // TODO
+           String statusCode = transferResult.getStsCd();
+
+        try {
+            String wthdAcntNo = transferResult.getWthdAcntNo();
+            int wthdAcntSeq = transferResult.getWthdAcntSeq();
+
+            TransactionHistory transactionHistory = TransactionHistory.builder()
+                .acntNo(wthdAcntNo)
+                .seq(wthdAcntSeq)
+                .divCd("2")
+                // 임의의 이체 실패시 화면에서 status 값이 "2" 인 경우 보상트랜잭션, 그렇지 않은 경우 타행이체 확정처리
+                .stsCd(statusCode.equals("2") ? "2" : "1")     
+                .build();
+
+            restTemplate.postForObject(
+                accountServiceUrl + "/withdrawals/confirm/",
+                transactionHistory,
+                Integer.class
+            );
+            transferService.createTransferHistory(transferResult);     
+
+            // CQRS
+            transferProducer.sendCQRSTransferMessage(transferResult);
+
+            ack.acknowledge(); // Only change the read offset value of Kafka after all CRUD operations are completed.
+        } catch (Exception e) {
+            String msg = "An unexpected problem occurred in the system";
+            LOGGER.error(msg, e);
+            throw new SystemException(msg);
+        } 
     }
 }
