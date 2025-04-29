@@ -71,30 +71,24 @@ node --version
 echo "npm version:"
 npm --version
 
-# Create application directory
-APP_DIR="/opt"
+# Create application directory and set permissions
+APP_DIR="/opt/modernbank_ui"
 echo "Creating application directory: \${APP_DIR}"
 mkdir -p \${APP_DIR}
+chown -R ubuntu:ubuntu /opt
 
-# Clone the repository
+# Clone the repository as ubuntu user
 echo "Cloning the repository..."
-REPO_URL="https://github.com/sharplee7/modernbank-demo.git" # Replace with the actual Git repository URL
-git clone \${REPO_URL} 
-cd modernbank-demo
-mv ./modernbank_ui \${APP_DIR}/modernbank_ui
-
-APP_DIR="/opt/modernbank_ui"
-
-# Move to application directory
-cd \${APP_DIR}
-
-# Install dependencies
-echo "Installing dependencies..."
-npm ci
+su - ubuntu -c "
+    git clone https://github.com/sharplee7/modernbank-demo.git /home/ubuntu/modernbank-demo
+    cp -r /home/ubuntu/modernbank-demo/modernbank_ui/* \${APP_DIR}/
+    cd \${APP_DIR}
+    npm ci
+"
 
 # Create environment variable file
-echo "Creating .env.production file..."
-cat << EOL > .env.development
+echo "Creating .env.development file..."
+cat << EOL > \${APP_DIR}/.env.development
 # Common API base URL
 NEXT_PUBLIC_API_BASE_URL=http://$INGRESS_ADDRESS
 
@@ -107,9 +101,8 @@ NEXT_PUBLIC_CQRS=http://$INGRESS_ADDRESS/cqrs
 NEXT_PUBLIC_PRODUCT=http://$INGRESS_ADDRESS/product
 EOL
 
-# Build the Next.js application
-echo "Building Next.js application..."
-# npm run build
+# Set proper ownership for the env file
+chown ubuntu:ubuntu \${APP_DIR}/.env.development
 
 # Create systemd service file
 echo "Creating systemd service..."
@@ -121,21 +114,29 @@ After=network.target
 [Service]
 Type=simple
 User=ubuntu
-WorkingDirectory=\${APP_DIR}
-ExecStart=/usr/bin/npm run dev
-Restart=on-failure
+WorkingDirectory=${APP_DIR}
 Environment=NODE_ENV=development
 Environment=PORT=3000
+Environment=PATH=/usr/bin:\$PATH
+ExecStart=/usr/bin/npm run dev
+Restart=always
+RestartSec=10
 
 [Install]
 WantedBy=multi-user.target
 EOL
+
+# Set proper permissions
+chown -R ubuntu:ubuntu \${APP_DIR}
 
 # Enable and start systemd service
 echo "Enabling and starting systemd service..."
 systemctl daemon-reload
 systemctl enable modernbank-ui.service
 systemctl start modernbank-ui.service
+
+# Wait for the service to start
+sleep 10
 
 # Check service status
 echo "Service status:"
