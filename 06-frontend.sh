@@ -124,8 +124,11 @@ User=ubuntu
 WorkingDirectory=${APP_DIR}
 Environment=NODE_ENV=development
 Environment=PORT=3000
-Environment=PATH=/usr/bin:\$PATH
-ExecStart=/usr/bin/npm run dev
+Environment=HOME=/home/ubuntu
+Environment=PATH=/usr/bin:/usr/local/bin:\$PATH
+ExecStart=/usr/bin/node /usr/bin/npm run dev
+StandardOutput=append:/var/log/modernbank-ui.log
+StandardError=append:/var/log/modernbank-ui.error.log
 Restart=always
 RestartSec=10
 
@@ -133,22 +136,36 @@ RestartSec=10
 WantedBy=multi-user.target
 EOL
 
+# Create log files and set permissions
+touch /var/log/modernbank-ui.log /var/log/modernbank-ui.error.log
+chown ubuntu:ubuntu /var/log/modernbank-ui.log /var/log/modernbank-ui.error.log
+
 # Set proper permissions
 chown -R ubuntu:ubuntu \${APP_DIR}
+chmod -R 755 \${APP_DIR}
 
-# Enable and start systemd service
-echo "Enabling and starting systemd service..."
+# Ensure npm cache directory exists and has correct permissions
+mkdir -p /home/ubuntu/.npm
+chown -R ubuntu:ubuntu /home/ubuntu/.npm
+
+# Create a script to run the application
+cat << EOL > \${APP_DIR}/start.sh
+#!/bin/bash
+cd \${APP_DIR}
+export NODE_ENV=development
+export PORT=3000
+npm run dev
+EOL
+
+chmod +x \${APP_DIR}/start.sh
+chown ubuntu:ubuntu \${APP_DIR}/start.sh
+
+# Modify the service to use the start script
+sed -i "s|ExecStart=/usr/bin/node /usr/bin/npm run dev|ExecStart=/bin/bash ${APP_DIR}/start.sh|" /etc/systemd/system/modernbank-ui.service
+
+# Reload systemd and restart service
 systemctl daemon-reload
-systemctl enable modernbank-ui.service
-
-# Start the service as ubuntu user
-su - ubuntu -c "sudo systemctl start modernbank-ui.service"
-
-# Wait for the service to start
-sleep 10
-
-# Check service status
-su - ubuntu -c "sudo systemctl status modernbank-ui.service"
+systemctl restart modernbank-ui.service
 EOF
 
 chmod +x ./front_userdata.sh
