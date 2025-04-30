@@ -39,7 +39,7 @@ metadata:
         alb.ingress.kubernetes.io/healthcheck-port.product: "8086"
         
         # User Service Health Check
-        alb.ingress.kubernetes.io/healthcheck-path.user: "/username/healthCheck"
+        alb.ingress.kubernetes.io/healthcheck-path.user: "/username/health"
         alb.ingress.kubernetes.io/healthcheck-port.user: "8091"
         
         # Main Service Health Check
