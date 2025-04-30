@@ -89,3 +89,51 @@ sed -i.bak \
 rm "$CONFIG_FILE.bak"
 
 echo "Updated ConfigMap has been written to $CONFIG_FILE"
+
+# 변수 설정
+ROLE_NAME="modernbank-service-role"
+ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+REGION=$(aws configure get region)
+
+# EKS 클러스터 이름을 list-clusters의 첫 번째 항목으로 자동 설정
+CLUSTER_NAME=$(aws eks list-clusters --query 'clusters[0]' --output text)
+
+echo "사용할 EKS 클러스터: $CLUSTER_NAME"
+
+# OIDC 제공자 URL 가져오기
+OIDC_PROVIDER=$(aws eks describe-cluster --name $CLUSTER_NAME --query "cluster.identity.oidc.issuer" --output text | sed 's|https://||')
+
+echo "OIDC 제공자: $OIDC_PROVIDER"
+
+# 신뢰 정책 생성
+cat > trust-policy.json << EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Principal": {
+        "Federated": "arn:aws:iam::${ACCOUNT_ID}:oidc-provider/${OIDC_PROVIDER}"
+      },
+      "Action": "sts:AssumeRoleWithWebIdentity",
+      "Condition": {
+        "StringLike": {
+          "${OIDC_PROVIDER}:sub": "system:serviceaccount:modernbank:modernbank-*-sa"
+        }
+      }
+    }
+  ]
+}
+EOF
+
+# 역할의 신뢰 정책 업데이트
+aws iam update-assume-role-policy --role-name $ROLE_NAME --policy-document file://trust-policy.json
+
+# 결과 확인
+echo "신뢰 정책이 업데이트되었습니다. 현재 정책:"
+aws iam get-role --role-name $ROLE_NAME --query Role.AssumeRolePolicyDocument --output json
+
+# 임시 파일 삭제
+rm -f trust-policy.json
+
+echo "IRSA 신뢰 정책 갱신 완료"
