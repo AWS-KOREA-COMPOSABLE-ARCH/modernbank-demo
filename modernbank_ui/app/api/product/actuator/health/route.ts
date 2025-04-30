@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
 
     try {
       // Check if the base product endpoint is available
-      const { data } = await apiClient("PRODUCT", "/", "GET", undefined, {
+      const { data } = await apiClient("PRODUCT", "/actuator", "GET", undefined, {
         'x-user-id': userId
       });
 
