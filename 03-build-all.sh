@@ -20,9 +20,9 @@ cd ..
 cd modernbank_transfer
 ./containerize.sh
 cd ..
-cd modernbank_ui
-./containerize.sh
-cd ..
+# cd modernbank_ui
+# ./containerize.sh
+# cd ..
 cd modernbank_user
 ./containerize.sh
 cd ..
