@@ -19,11 +19,11 @@ WRITER_ENDPOINT=$(aws rds describe-db-clusters \
     --output text)
 
 # Create database
-psql "postgresql://postgres:postgres1234!@${WRITER_ENDPOINT}/postgres" \
+psql "postgresql://postgres:admin1234@${WRITER_ENDPOINT}/postgres" \
     -c "CREATE DATABASE users;"
 
 # Create table
-psql "postgresql://postgres:postgres1234!@${WRITER_ENDPOINT}/users" \
+psql "postgresql://postgres:admin1234@${WRITER_ENDPOINT}/users" \
     -c "CREATE TABLE public.tb_user (
         USER_ID character varying(50) NOT NULL,
         PASSWORD_HASH character varying(255) NOT NULL,
@@ -33,10 +33,10 @@ psql "postgresql://postgres:postgres1234!@${WRITER_ENDPOINT}/users" \
     );"
 
 # Add primary key
-psql "postgresql://postgres:postgres1234!@${WRITER_ENDPOINT}/users" \
+psql "postgresql://postgres:admin1234@${WRITER_ENDPOINT}/users" \
     -c "ALTER TABLE ONLY public.tb_user ADD CONSTRAINT tb_user_pkey PRIMARY KEY (user_id);"
 
 # Insert health check data
-PGPASSWORD=postgres1234! psql -h ${WRITER_ENDPOINT} -U postgres -d users \
+PGPASSWORD=admin1234 psql -h ${WRITER_ENDPOINT} -U postgres -d users \
     -c "INSERT INTO public.tb_user (USER_ID, PASSWORD_HASH, USERNAME, SALT, CREATED_AT) 
-        VALUES ('HealthCheck', 'HealthCheck', 'HealthCheck', 'HealthCheck', now());"
+        VALUES ('health', 'health', 'health', 'health', now());"
