@@ -5,4 +5,4 @@ metadata:
   name: modernbank-b2bt-sa
   namespace: modernbank
   annotations:
-    eks.amazonaws.com/role-arn: arn:aws:iam::216989108269:role/modernbank-services-role
+    eks.amazonaws.com/role-arn: arn:aws:iam::216989108269:role/modernbank-service-role
