@@ -1,5 +1,14 @@
 #!/bin/bash
 
+# 시스템 패키지 정보 업데이트
+sudo dnf update -y
+
+# PostgreSQL 클라이언트 설치 (버전 선택 가능, 기본은 postgresql15)
+sudo dnf install -y postgresql15
+
+# 설치 확인
+psql --version
+
 # Get the writer endpoint
 WRITER_ENDPOINT=$(aws rds describe-db-clusters \
     --db-cluster-identifier modernbank-user \
