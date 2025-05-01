@@ -131,7 +131,7 @@ aws iam update-assume-role-policy --role-name $ROLE_NAME --policy-document file:
 
 # 결과 확인
 echo "신뢰 정책이 업데이트되었습니다. 현재 정책:"
-aws iam get-role --role-name $ROLE_NAME --query Role.AssumeRolePolicyDocument --output json
+aws iam get-role --role-name $ROLE_NAME --query Role.AssumeRolePolicyDocument --output json --no-cli-pager
 
 # 임시 파일 삭제
 rm -f trust-policy.json
