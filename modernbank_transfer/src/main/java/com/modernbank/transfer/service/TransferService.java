@@ -216,7 +216,7 @@ public class TransferService {
         int seq = retrieveMaxSeq(cstmId) + 1;
         
         transfer.setSeq(seq);
-        
+        transfer.setDivCd("W");        
         // TB_TRNF_HST 테이블에 이체 이력 남기기
         createTransferHistory(transfer);
         
