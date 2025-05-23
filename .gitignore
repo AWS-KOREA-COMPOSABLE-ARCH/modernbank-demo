@@ -1,6 +1,9 @@
 ### gradle ###
 **/build/**
 
+.gradle/**/fileHashes/fileHashes.bin
+.gradle/**/fileHashes/fileHashes.lock
+
 ## compile ##
 **/bin/**
 **/libs/**
