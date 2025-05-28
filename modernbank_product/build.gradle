@@ -44,8 +44,7 @@ dependencies {
     implementation("org.projectlombok:lombok")
 
     // Spring Boot Actuator
-    // TO DO here
-
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
 
     annotationProcessor("org.projectlombok:lombok")
 
