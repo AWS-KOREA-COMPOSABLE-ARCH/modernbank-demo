@@ -43,9 +43,6 @@ dependencies {
     // Lombok (자동 Getter/Setter, Builder 지원)
     implementation("org.projectlombok:lombok")
 
-    // Spring Boot Actuator
-    // implementation 'org.springframework.boot:spring-boot-starter-actuator'
-
     annotationProcessor("org.projectlombok:lombok")
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
