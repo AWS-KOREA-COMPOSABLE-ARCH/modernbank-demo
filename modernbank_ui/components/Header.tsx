@@ -94,13 +94,18 @@ export default function Header() {
     const checkCustomerExists = async () => {
       if (isAuthenticated && user?.user_id) {
         try {
-          const response = await fetch('/api/customer', {
-            method: 'HEAD',
+          const response = await fetch(`/api/customer?customerId=${user.user_id}&action=exists`, {
             headers: {
               'x-user-id': user.user_id,
             },
           });
-          setHasCustomer(response.ok);
+          
+          if (response.ok) {
+            const exists = await response.json();
+            setHasCustomer(exists === true);
+          } else {
+            setHasCustomer(false);
+          }
         } catch (error) {
           console.error('고객 존재 여부 확인 실패:', error);
           setHasCustomer(false);
@@ -110,6 +115,20 @@ export default function Header() {
 
     checkCustomerExists();
   }, [isAuthenticated, user]);
+
+  // 고객 등록 이벤트 리스너
+  useEffect(() => {
+    const handleCustomerRegistered = () => {
+      console.log('고객 등록 이벤트 수신, 상태 업데이트');
+      setHasCustomer(true);
+    };
+
+    window.addEventListener('customerRegistered', handleCustomerRegistered);
+    
+    return () => {
+      window.removeEventListener('customerRegistered', handleCustomerRegistered);
+    };
+  }, []);
 
   const handleLogout = () => {
     dispatch(clearUser());

@@ -55,9 +55,9 @@ export default function Deposit() {
 
       const accounts = Array.isArray(data) ? data : data.data || [];
       setAccountList(accounts);
-      if (accounts.length > 0) {
-        setSelectedAccount(accounts[0].acntNo);
-      }
+      // 자동으로 첫 번째 계좌를 선택하지 않음
+      setSelectedAccount("");
+      setAccountInfo(null);
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : "계좌 조회 중 오류가 발생했습니다.";
       showModal(errorMessage);
@@ -74,6 +74,12 @@ export default function Deposit() {
 
   const handleSelectAccount = async (acntNo: string) => {
     setSelectedAccount(acntNo);
+    
+    if (!acntNo) {
+      setAccountInfo(null);
+      return;
+    }
+    
     setIsLoading(true);
 
     try {

@@ -135,6 +135,13 @@ const apiClient = async (
       if (contentType && contentType.includes("application/json")) {
         const errorData = await response.json();
         console.error("[API Client] Error response:", errorData);
+        
+        // 417 에러 (ID does not exist)는 특별 처리
+        if (response.status === 417) {
+          console.log("[API Client] 417 error - ID does not exist, treating as normal case");
+          return { data: false, headers: response.headers };
+        }
+        
         throw new Error(errorData.message || `Request failed: ${response.statusText}`);
       } else {
         console.error("[API Client] Non-JSON error response:", response.statusText);
@@ -162,6 +169,11 @@ const apiClient = async (
     }
 
     console.log("[API Client] Success response data:", data);
+    console.log("[API Client] Response data type:", typeof data);
+    console.log("[API Client] Response data stringified:", JSON.stringify(data));
+    console.log("[API Client] Data is 0:", data === 0);
+    console.log("[API Client] Data is falsy:", !data);
+    console.log("[API Client] Returning data:", { data, headers: response.headers });
 
     return { data, headers: response.headers };
   } catch (error: any) {

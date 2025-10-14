@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store/store";
 import { Dialog, DialogBackdrop, DialogPanel, DialogTitle } from "@headlessui/react";
-import { CheckIcon } from "@heroicons/react/24/outline";
+import { CheckIcon, ExclamationTriangleIcon } from "@heroicons/react/24/outline";
 import { User } from "@/types/auth";
 import { useRouter } from "next/navigation";
 
@@ -46,6 +46,7 @@ export default function CreateCustomerPage() {
       
       if (response.ok) {
         const customerData = await response.json();
+        console.log("Fetched customer data:", customerData);
         setFormData({
           cstmId: customerData.cstmId,
           cstmNm: customerData.cstmNm,
@@ -54,6 +55,8 @@ export default function CreateCustomerPage() {
           cstmAdr: customerData.cstmAdr || "",
           cstmPn: customerData.cstmPn || "",
         });
+      } else {
+        console.error("Failed to fetch customer data:", response.status);
       }
     } catch (error) {
       console.error("Error fetching customer data:", error);
@@ -67,12 +70,18 @@ export default function CreateCustomerPage() {
           'x-user-id': userId,
         },
       });
-      const exists = response.ok;
-      setCustomerExists(exists);
       
-      // 고객이 존재하면 고객 정보 가져오기
-      if (exists) {
-        fetchCustomerData(userId);
+      if (response.ok) {
+        const data = await response.json();
+        const exists = data === true || data === "true";
+        setCustomerExists(exists);
+        
+        // 고객이 존재하면 고객 정보 가져오기
+        if (exists) {
+          fetchCustomerData(userId);
+        }
+      } else {
+        setCustomerExists(false);
       }
     } catch (error) {
       console.error("Error checking customer existence:", error);
@@ -118,38 +127,73 @@ export default function CreateCustomerPage() {
     setLoading(true);
     
     try {
+      // 고객이 존재하면 PUT 요청, 없으면 POST 요청
+      const method = customerExists ? "PUT" : "POST";
+      
+      const requestBody = {
+        cstmId: user.user_id,
+        cstmNm: formData.cstmNm,
+        cstmAge: formData.cstmAge,
+        cstmGnd: formData.cstmGnd,
+        cstmPn: formData.cstmPn,
+        cstmAdr: formData.cstmAdr,
+        oneTmTrnfLmt: 0,
+        oneDyTrnfLmt: 0,
+        accounts: []
+      };
+
+      console.log('[Customer Form] Submitting:', {
+        method,
+        customerExists,
+        requestBody,
+        userId: user.user_id
+      });
+      
       const response = await fetch("/api/customer", {
-        method: "POST",
+        method: method,
         headers: {
           "Content-Type": "application/json",
           "x-user-id": user.user_id,
         },
-        body: JSON.stringify({
-          cstmId: user.user_id,
-          cstmNm: formData.cstmNm,
-          cstmAge: formData.cstmAge,
-          cstmGnd: formData.cstmGnd,
-          cstmPn: formData.cstmPn,
-          cstmAdr: formData.cstmAdr,
-          oneTmTrnfLmt: 0,
-          oneDyTrnfLmt: 0,
-          accounts: []
-        }),
+        body: JSON.stringify(requestBody),
       });
 
+      console.log('[Customer Form] Response status:', response.status);
+      console.log('[Customer Form] Response headers:', Object.fromEntries(response.headers));
+
+      const responseData = await response.json();
+      console.log('[Customer Form] Response data:', responseData);
+      console.log('[Customer Form] Response data type:', typeof responseData);
+      console.log('[Customer Form] Response data keys:', Object.keys(responseData));
+      console.log('[Customer Form] Response ok:', response.ok);
+      console.log('[Customer Form] Response status:', response.status);
+
       if (!response.ok) {
-        throw new Error("Failed to create/update customer");
+        console.error('[Customer Form] Error response:', responseData);
+        throw new Error(responseData.error || "Failed to create/update customer");
       }
 
+      // 성공 응답 처리
       setModalContent({
         title: customerExists ? "고객 정보 수정" : "고객 등록",
         message: customerExists ? "고객 정보가 수정되었습니다." : "고객 등록이 완료되었습니다."
       });
       setModalOpen(true);
-    } catch {
+      
+      // 고객 등록 성공 후 상태 업데이트
+      if (!customerExists) {
+        setCustomerExists(true);
+        // 고객 정보 다시 가져오기
+        await fetchCustomerData(user.user_id);
+        
+        // Header 컴포넌트 상태 강제 업데이트를 위한 이벤트 발생
+        window.dispatchEvent(new CustomEvent('customerRegistered'));
+      }
+    } catch (error) {
+      console.error("Customer create/update error:", error);
       setModalContent({
         title: "오류",
-        message: "고객 생성/수정 중 오류가 발생했습니다."
+        message: error instanceof Error ? error.message : "고객 생성/수정 중 오류가 발생했습니다."
       });
       setModalOpen(true);
     } finally {
@@ -320,8 +364,14 @@ export default function CreateCustomerPage() {
               className="relative transform overflow-hidden rounded-lg bg-white dark:bg-gray-800 px-4 pb-4 pt-5 text-left shadow-xl transition-all data-[closed]:translate-y-4 data-[closed]:opacity-0 data-[enter]:duration-300 data-[leave]:duration-200 data-[enter]:ease-out data-[leave]:ease-in sm:my-8 sm:w-full sm:max-w-sm sm:p-6 data-[closed]:sm:translate-y-0 data-[closed]:sm:scale-95"
             >
               <div>
-                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
-                  <CheckIcon aria-hidden="true" className="h-6 w-6 text-green-600" />
+                <div className={`mx-auto flex h-12 w-12 items-center justify-center rounded-full ${
+                  modalContent.title === "오류" ? "bg-red-100" : "bg-green-100"
+                }`}>
+                  {modalContent.title === "오류" ? (
+                    <ExclamationTriangleIcon aria-hidden="true" className="h-6 w-6 text-red-600" />
+                  ) : (
+                    <CheckIcon aria-hidden="true" className="h-6 w-6 text-green-600" />
+                  )}
                 </div>
                 <div className="mt-3 text-center sm:mt-5">
                   <DialogTitle as="h3" className="text-base font-semibold text-gray-900 dark:text-white">

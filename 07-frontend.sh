@@ -80,7 +80,7 @@ chown -R ubuntu:ubuntu /opt
 # Clone the repository as ubuntu user
 echo "Cloning the repository..."
 su - ubuntu -c "
-    git clone https://github.com/sharplee7/modernbank-demo-deprecated.git /home/ubuntu/modernbank-demo
+    git clone https://github.com/AWS-KOREA-COMPOSABLE-ARCH/modernbank-demo.git /home/ubuntu/modernbank-demo
     cp -r /home/ubuntu/modernbank-demo/modernbank_ui/* \${APP_DIR}/
     cd \${APP_DIR}
     npm ci

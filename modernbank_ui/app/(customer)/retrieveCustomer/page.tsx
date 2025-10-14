@@ -20,13 +20,13 @@ interface CustomerData {
   cstmAge: string;
   cstmAdr: string;
   cstmPn: string;
-  accounts?: Account[];
 }
 
 export default function RetrieveCustomer() {
   const router = useRouter();
   const { user } = useSelector((state: RootState) => state.auth);
   const [customerData, setCustomerData] = useState<CustomerData | null>(null);
+  const [accounts, setAccounts] = useState<Account[]>([]);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [errorModalOpen, setErrorModalOpen] = useState(false);
@@ -35,6 +35,7 @@ export default function RetrieveCustomer() {
   useEffect(() => {
     if (user?.user_id) {
       fetchCustomerData(user.user_id);
+      fetchAccounts(user.user_id);
     } else {
       setErrorMessage("로그인이 필요합니다.");
       setErrorModalOpen(true);
@@ -45,7 +46,6 @@ export default function RetrieveCustomer() {
   // 고객 데이터 조회 함수
   const fetchCustomerData = async (userId: string) => {
     setLoading(true);
-    setCustomerData(null);
 
     try {
       const apiResponse = await fetch(`/api/customer?customerId=${userId}&action=details`, {
@@ -72,6 +72,48 @@ export default function RetrieveCustomer() {
     }
   };
 
+  // 계좌 정보 조회 함수
+  const fetchAccounts = async (userId: string) => {
+    try {
+      const apiResponse = await fetch(`/api/account?path=accounts&customerId=${userId}`, {
+        headers: {
+          'x-user-id': userId
+        }
+      });
+
+      const responseData = await apiResponse.json();
+
+      if (!apiResponse.ok) {
+        console.error("계좌 정보 조회 실패:", responseData.error);
+        return;
+      }
+
+      const accountsData = Array.isArray(responseData) ? responseData : responseData.data || [];
+      setAccounts(accountsData);
+    } catch (error: unknown) {
+      console.error("계좌 조회 실패:", error);
+    }
+  };
+
+  // 날짜 형식 변환 함수
+  const formatDate = (dateString: string) => {
+    if (!dateString) return '-';
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleString('ko-KR', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
+      });
+    } catch (error) {
+      return dateString;
+    }
+  };
+
   // 고객 조회 버튼 클릭 시 상세 정보 조회
   const handleSearch = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -81,6 +123,7 @@ export default function RetrieveCustomer() {
       return;
     }
     await fetchCustomerData(user.user_id);
+    await fetchAccounts(user.user_id);
   };
 
   return (
@@ -181,21 +224,38 @@ export default function RetrieveCustomer() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                {customerData?.accounts?.length ? (
-                  customerData.accounts.map((account, idx) => (
+                {loading ? (
+                  <tr>
+                    <td colSpan={4} className="px-4 py-8 text-sm text-center text-gray-500 dark:text-gray-400">
+                      <div className="flex items-center justify-center">
+                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-blue-600" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                        </svg>
+                        계좌 정보를 불러오는 중입니다...
+                      </div>
+                    </td>
+                  </tr>
+                ) : accounts?.length ? (
+                  accounts.map((account, idx) => (
                     <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
                       <td className="px-4 py-3 text-sm text-gray-900 dark:text-white whitespace-nowrap">{account.acntNm}</td>
                       <td className="px-4 py-3 text-sm text-gray-900 dark:text-white font-medium whitespace-nowrap">{account.acntNo}</td>
                       <td className="px-4 py-3 text-sm text-gray-900 dark:text-white whitespace-nowrap">
                         {new Intl.NumberFormat('ko-KR', { style: 'currency', currency: 'KRW' }).format(account.acntBlnc)}
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">{account.newDtm}</td>
+                      <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">{formatDate(account.newDtm)}</td>
                     </tr>
                   ))
                 ) : (
                   <tr>
                     <td colSpan={4} className="px-4 py-8 text-sm text-center text-gray-500 dark:text-gray-400">
-                      조회된 계좌 정보가 없습니다.
+                      <div className="flex flex-col items-center">
+                        <svg className="h-8 w-8 text-gray-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                        </svg>
+                        보유한 계좌가 없습니다.
+                      </div>
                     </td>
                   </tr>
                 )}

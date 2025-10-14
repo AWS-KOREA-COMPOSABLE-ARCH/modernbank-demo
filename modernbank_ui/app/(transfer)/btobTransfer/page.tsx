@@ -30,6 +30,7 @@ export default function BtobTransfer() {
     const [accountBalance, setAccountBalance] = useState<number | null>(null);
     const [transferLimit, setTransferLimit] = useState<TransferLimit | null>(null);
     const [isLoading, setIsLoading] = useState(false);
+    const [isInitialLoading, setIsInitialLoading] = useState(true);
     const [error, setError] = useState<string>("");
 
     // Modal 상태 추가
@@ -69,6 +70,7 @@ export default function BtobTransfer() {
             );
         } finally {
             setIsLoading(false);
+            setIsInitialLoading(false);
         }
     }, [user]);
 
@@ -77,6 +79,31 @@ export default function BtobTransfer() {
             fetchAccounts();
         }
     }, [user, fetchAccounts]);
+
+    // 이체 한도 조회
+    const fetchTransferLimit = useCallback(async () => {
+        if (!user) return;
+        try {
+            const response = await fetch(`/api/transfer?path=limits&customerId=${user.user_id}`, {
+                headers: {
+                    'x-user-id': user.user_id
+                }
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                setTransferLimit(data);
+            }
+        } catch (error) {
+            console.error('이체 한도 조회 실패:', error);
+        }
+    }, [user]);
+
+    useEffect(() => {
+        if (user) {
+            fetchTransferLimit();
+        }
+    }, [user, fetchTransferLimit]);
 
     const handleSelectAccount = async (acntNo: string) => {
         setWthdAcntNo(acntNo);
@@ -133,6 +160,12 @@ export default function BtobTransfer() {
     };
 
     const handleTransfer = async (stsCd: number) => {
+        // 초기 로딩 중인지 확인
+        if (isInitialLoading) {
+            showModal("로딩 중", "데이터를 불러오는 중입니다. 잠시 후 다시 시도해주세요.");
+            return;
+        }
+
         if (!accountInfo) {
             showModal("경고", "출금 계좌를 먼저 선택하세요.");
             return;
@@ -145,7 +178,11 @@ export default function BtobTransfer() {
             showModal("경고", "이체 금액은 0원보다 커야 합니다.");
             return;
         }
-        if (trnfAmt > (accountBalance ?? 0)) {
+        if (accountBalance === null) {
+            showModal("경고", "계좌 잔액을 확인할 수 없습니다. 계좌를 다시 선택해주세요.");
+            return;
+        }
+        if (trnfAmt > accountBalance) {
             showModal("경고", "출금 계좌의 잔액이 부족합니다.");
             return;
         }
@@ -195,6 +232,14 @@ export default function BtobTransfer() {
             }
 
             if (stsCd === 1) {
+                // 타행 이체는 배치 처리되므로 즉시 잔액 변화가 없을 수 있음
+                // 이체 요청이 성공적으로 접수되었음을 알림
+                showModal(
+                    "이체 완료",
+                    `✅ 이체 완료! ${trnfAmt.toLocaleString()} 원`
+                );
+                
+                // 잔액 정보 업데이트 (참고용)
                 const balanceResponse = await fetch(
                     `/api/account?path=balance&accountNo=${accountInfo.acntNo}`, {
                         headers: {
@@ -205,16 +250,6 @@ export default function BtobTransfer() {
                 if (balanceResponse.ok) {
                     const balanceData = await balanceResponse.json();
                     setAccountBalance(balanceData);
-                    
-                    if (balanceData === previousBalance) {
-                        showModal("이체 장애", "이체 처리 중 장애가 발생했습니다. 잠시 후 다시 시도해주세요.");
-                        return;
-                    }
-                    
-                    showModal(
-                        "이체 요청",
-                        `✅ 이체 요청 완료! ${trnfAmt.toLocaleString()} 원`
-                    );
                 }
             } else {
                 showModal("연결 장애", "⛔ 타행 시스템 문제로 인하여 잠시후 재 시도 바랍니다.");
@@ -252,7 +287,23 @@ export default function BtobTransfer() {
                     </div>
                 )}
 
+                {/* 초기 로딩 상태 */}
+                {isInitialLoading && (
+                    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+                        <div className="flex items-center justify-center py-8">
+                            <div className="flex items-center space-x-3">
+                                <svg className="animate-spin h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                                </svg>
+                                <span className="text-gray-600 dark:text-gray-400">계좌 정보를 불러오는 중...</span>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {/* 이체 폼 */}
+                {!isInitialLoading && (
                 <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
                     <div className="space-y-6">
                         {/* 출금 계좌 선택 */}
@@ -283,6 +334,16 @@ export default function BtobTransfer() {
                                         {accountBalance.toLocaleString()} 원
                                     </span>
                                 </p>
+                            )}
+                            {transferLimit && (
+                                <div className="mt-2 space-y-1">
+                                    <p className="text-xs text-gray-400 dark:text-gray-500">
+                                        1회 이체 한도: {transferLimit.oneTmTrnfLmt.toLocaleString()} 원
+                                    </p>
+                                    <p className="text-xs text-gray-400 dark:text-gray-500">
+                                        1일 이체 한도: {transferLimit.oneDyTrnfLmt.toLocaleString()} 원
+                                    </p>
+                                </div>
                             )}
                         </div>
 
@@ -401,6 +462,7 @@ export default function BtobTransfer() {
                         </div>
                     </div>
                 </div>
+                )}
             </div>
 
             {/* Modal Dialog */}

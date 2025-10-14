@@ -14,6 +14,8 @@ interface Transaction {
   acntBlnc: number;
   trnsBrnch?: string;
   trnsDtm: string;
+  calculatedDivCd?: string; // 계산된 거래구분
+  previousBalance?: number; // 이전 잔액
 }
 
 interface Account {
@@ -59,9 +61,8 @@ export default function TransactionHistory() {
 
         const data = await response.json();
         setAccounts(data);
-        if (data.length > 0) {
-          setSelectedAccount(data[0].acntNo);
-        }
+        // 자동으로 첫 번째 계좌를 선택하지 않음
+        setSelectedAccount("");
       } catch (error: unknown) {
         const errorMessage = error instanceof Error ? error.message : "계좌 목록 조회 중 오류가 발생했습니다.";
         showModal("오류", errorMessage);
@@ -91,11 +92,46 @@ export default function TransactionHistory() {
         }
 
         const data = await response.json();
-        // 거래일시 기준으로 내림차순 정렬
+        
+        // 거래 내역을 날짜순으로 정렬 (오래된 순)
         const sortedTransactions = data.sort((a: Transaction, b: Transaction) => 
+          new Date(a.trnsDtm).getTime() - new Date(b.trnsDtm).getTime()
+        );
+
+        // 각 거래에 대해 이전 잔액을 계산하고 입금/출금 여부를 판단
+        const processedTransactions = sortedTransactions.map((transaction: Transaction, index: number) => {
+          let previousBalance = 0;
+          
+          if (index > 0) {
+            // 이전 거래의 잔액을 이전 잔액으로 사용
+            previousBalance = sortedTransactions[index - 1].acntBlnc;
+          } else {
+            // 첫 번째 거래의 경우, 현재 잔액에서 거래 금액을 빼서 이전 잔액 계산
+            // 거래 금액이 양수이므로, 현재 잔액에서 거래 금액을 빼면 이전 잔액
+            previousBalance = transaction.acntBlnc - transaction.trnsAmt;
+          }
+
+          // 잔액 변화를 계산
+          const balanceChange = transaction.acntBlnc - previousBalance;
+          
+          // 잔액이 증가했으면 입금, 감소했으면 출금
+          // balanceChange가 양수이면 입금, 음수이면 출금
+          const isDeposit = balanceChange > 0;
+          const calculatedDivCd = isDeposit ? 'D' : 'W';
+          
+          return {
+            ...transaction,
+            calculatedDivCd, // 계산된 거래구분
+            previousBalance // 이전 잔액
+          };
+        });
+
+        // 최신 순으로 다시 정렬
+        const finalTransactions = processedTransactions.sort((a: any, b: any) => 
           new Date(b.trnsDtm).getTime() - new Date(a.trnsDtm).getTime()
         );
-        setTransactions(sortedTransactions);
+
+        setTransactions(finalTransactions);
       } catch (error: unknown) {
         const errorMessage = error instanceof Error ? error.message : "거래 내역 조회 중 오류가 발생했습니다.";
         showModal("오류", errorMessage);
@@ -147,6 +183,7 @@ export default function TransactionHistory() {
 
   const formatAmount = (amount: number, divCd: string) => {
     const formattedAmount = amount.toLocaleString();
+    // divCd가 'D'이면 입금(플러스), 'W'이면 출금(마이너스)
     return divCd === 'D' 
       ? `+${formattedAmount}`
       : `-${formattedAmount}`;
@@ -198,84 +235,100 @@ export default function TransactionHistory() {
         </div>
 
         {/* 거래 내역 테이블 */}
-        <div className="mt-8 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-              <thead className="bg-gray-50 dark:bg-gray-700/50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    거래일시
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    거래구분
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    거래금액
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    거래후잔액
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    거래지점
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    상태
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                {isLoading ? (
+        {selectedAccount ? (
+          <div className="mt-8 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+                <thead className="bg-gray-50 dark:bg-gray-700/50">
                   <tr>
-                    <td colSpan={6} className="px-6 py-4 text-center">
-                      <div className="flex justify-center">
-                        <svg className="animate-spin h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                        </svg>
-                        <span className="ml-2">거래내역 조회 중...</span>
-                      </div>
-                    </td>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      거래일시
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      거래구분
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      거래금액
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      거래후잔액
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      거래지점
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      상태
+                    </th>
                   </tr>
-                ) : transactions.length > 0 ? (
-                  transactions.map((transaction) => {
-                    const type = getTransactionType(transaction.divCd);
-                    const status = getTransactionStatus(transaction.stsCd);
-                    return (
-                      <tr key={transaction.seq} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                          {formatDate(transaction.trnsDtm)}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <span className={type.color}>{type.text}</span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <span className={type.color}>
-                            {formatAmount(transaction.trnsAmt, transaction.divCd)} 원
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                          {transaction.acntBlnc.toLocaleString()} 원
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                          {transaction.trnsBrnch || '온라인'}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm">
-                          <span className={status.color}>{status.text}</span>
-                        </td>
-                      </tr>
-                    );
-                  })
-                ) : (
-                  <tr>
-                    <td colSpan={6} className="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
-                      거래 내역이 없습니다.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                  {isLoading ? (
+                    <tr>
+                      <td colSpan={6} className="px-6 py-4 text-center">
+                        <div className="flex justify-center">
+                          <svg className="animate-spin h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                          </svg>
+                          <span className="ml-2">거래내역 조회 중...</span>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : transactions.length > 0 ? (
+                    transactions.map((transaction) => {
+                      // 계산된 거래구분이 있으면 사용하고, 없으면 기존 divCd 사용
+                      const divCd = transaction.calculatedDivCd || transaction.divCd;
+                      const type = getTransactionType(divCd);
+                      const status = getTransactionStatus(transaction.stsCd);
+                      return (
+                        <tr key={transaction.seq} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                            {formatDate(transaction.trnsDtm)}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <span className={type.color}>{type.text}</span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <span className={type.color}>
+                              {formatAmount(transaction.trnsAmt, divCd)} 원
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                            {transaction.acntBlnc.toLocaleString()} 원
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                            {transaction.trnsBrnch || '온라인'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm">
+                            <span className={status.color}>{status.text}</span>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  ) : (
+                    <tr>
+                      <td colSpan={6} className="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
+                        거래 내역이 없습니다.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="mt-8 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-8">
+            <div className="text-center">
+              <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">계좌를 선택하세요</h3>
+              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                거래 내역을 조회하려면 위에서 계좌를 선택해주세요.
+              </p>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Modal Dialog */}
