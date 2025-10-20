@@ -252,7 +252,7 @@ export default function BtobTransfer() {
                     setAccountBalance(balanceData);
                 }
             } else {
-                showModal("연결 장애", "⛔ 타행 시스템 문제로 인하여 잠시후 재 시도 바랍니다.");
+                showModal("이체 요청 완료", `✅ 이체 요청 완료! ${trnfAmt.toLocaleString()} 원`);
             }
             setTrnfAmt(0);
         } catch (error: unknown) {

@@ -37,8 +37,10 @@ public class TransferController {
     @Operation(summary = "Inter-Bank Transfer", method = "POST", description = "Inter-Bank Transfer")
     @RequestMapping(method = RequestMethod.POST, path = "/external")
     public Boolean btobTransfer(@RequestBody TransferHistory input) throws Exception{
-        LOGGER.info("=====>DivCd: " + input.getDivCd() + ", StsCd:" + input.getStsCd());
-
+        // divCD W는 타행이체
+        input.setDivCd("W");
+        // stsCD 0: 처리요청, 1: 성공, 2: 실패
+        // input.setStsCd("0");
         return transferService.interBankTransfer(input);
     }
 

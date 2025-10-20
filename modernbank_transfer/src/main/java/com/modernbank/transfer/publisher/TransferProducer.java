@@ -58,7 +58,7 @@ public class TransferProducer {
                 TransactionHistory transactionHistory = TransactionHistory.builder()
                     .acntNo(wthdAcntNo)
                     .seq(wthdAcntSeq)
-                    .divCd("2")
+                    .divCd("W")
                     .stsCd("2")
                     .build();
   

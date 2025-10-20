@@ -43,7 +43,7 @@ public class KafkaConsumerConfig {
         ConcurrentKafkaListenerContainerFactory<String, TransferHistory> factory = new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(b2bTransferConsumerFactory());
         factory.getContainerProperties().setAckMode(AckMode.MANUAL_IMMEDIATE);
-
+        /**
         factory.setRecordFilterStrategy(consumerRecord -> {
             long currentTimestamp = System.currentTimeMillis();
             long messageTimestamp = consumerRecord.timestamp();
@@ -55,7 +55,7 @@ public class KafkaConsumerConfig {
             }
             return isOld;
         });
-
+        */
         
         // Set up new error handler
         CommonErrorHandler errorHandler = new DefaultErrorHandler(new FixedBackOff(1000L, 2));

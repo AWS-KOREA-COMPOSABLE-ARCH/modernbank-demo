@@ -207,12 +207,14 @@ export default function TransferHistory() {
                       <td className="px-4 py-3">
                         <span
                           className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            transfer.stsCd === "0" || transfer.stsCd === "3" || transfer.stsCd === "C"
+                            transfer.stsCd === "0"
+                              ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300"
+                              : transfer.stsCd === "1"
                               ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300"
                               : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300"
                           }`}
                         >
-                          {transfer.stsCd === "0" || transfer.stsCd === "3" || transfer.stsCd === "C" ? "성공" : "실패"}
+                          {transfer.stsCd === "0" ? "진행중" : transfer.stsCd === "1" ? "성공" : "실패"}
                         </span>
                       </td>
                     </tr>

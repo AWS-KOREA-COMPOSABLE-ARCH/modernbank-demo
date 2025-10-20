@@ -170,11 +170,11 @@ export default function TransactionHistory() {
 
   const getTransactionStatus = (stsCd: string) => {
     switch (stsCd) {
+      case '0':
+        return { text: '진행중', color: 'text-yellow-600 dark:text-yellow-400' };
       case '1':
-        return { text: '완료', color: 'text-green-600 dark:text-green-400' };
+        return { text: '성공', color: 'text-green-600 dark:text-green-400' };
       case '2':
-        return { text: '처리중', color: 'text-yellow-600 dark:text-yellow-400' };
-      case '3':
         return { text: '실패', color: 'text-red-600 dark:text-red-400' };
       default:
         return { text: '알 수 없음', color: 'text-gray-600 dark:text-gray-400' };
@@ -254,9 +254,6 @@ export default function TransactionHistory() {
                       거래후잔액
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      거래지점
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                       상태
                     </th>
                   </tr>
@@ -264,7 +261,7 @@ export default function TransactionHistory() {
                 <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                   {isLoading ? (
                     <tr>
-                      <td colSpan={6} className="px-6 py-4 text-center">
+                      <td colSpan={5} className="px-6 py-4 text-center">
                         <div className="flex justify-center">
                           <svg className="animate-spin h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24">
                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
@@ -293,11 +290,10 @@ export default function TransactionHistory() {
                               {formatAmount(transaction.trnsAmt, divCd)} 원
                             </span>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                            {transaction.acntBlnc.toLocaleString()} 원
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                            {transaction.trnsBrnch || '온라인'}
+                          <td className="px-6 py-4 whitespace-nowrap text-sm">
+                            <span className={transaction.stsCd === '0' ? 'text-yellow-600 dark:text-yellow-400' : 'text-gray-900 dark:text-white'}>
+                              {transaction.acntBlnc.toLocaleString()} 원
+                            </span>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm">
                             <span className={status.color}>{status.text}</span>
@@ -307,7 +303,7 @@ export default function TransactionHistory() {
                     })
                   ) : (
                     <tr>
-                      <td colSpan={6} className="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
+                      <td colSpan={5} className="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
                         거래 내역이 없습니다.
                       </td>
                     </tr>

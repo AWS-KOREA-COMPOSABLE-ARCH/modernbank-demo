@@ -37,6 +37,7 @@ public class B2BTransferResultConsumer {
     @KafkaListener(topics = "${b2b.transfer.result.topic.name}", containerFactory = "b2bTransferResultKafkaListenerContainerFactory")
     public void b2bTransferResultListener(TransferHistory transferResult, Acknowledgment ack) throws Exception {
            String statusCode = transferResult.getStsCd();
+System.out.println("======> 서버로부터 받은 statusCode 값은: " + statusCode);
 
         try {
             String wthdAcntNo = transferResult.getWthdAcntNo();
@@ -45,16 +46,18 @@ public class B2BTransferResultConsumer {
             TransactionHistory transactionHistory = TransactionHistory.builder()
                 .acntNo(wthdAcntNo)
                 .seq(wthdAcntSeq)
-                .divCd("2")
+                .divCd("W")
                 // 임의의 이체 실패시 화면에서 status 값이 "2" 인 경우 보상트랜잭션, 그렇지 않은 경우 타행이체 확정처리
                 .stsCd(statusCode.equals("2") ? "2" : "1")     
                 .build();
 
-            restTemplate.postForObject(
+                restTemplate.postForObject(
                 accountServiceUrl + "/withdrawals/confirm/",
                 transactionHistory,
                 Integer.class
             );
+            // Status Code 확정 처리
+            transferResult.setStsCd(statusCode.equals("2") ? "2" : "1");
             transferService.createTransferHistory(transferResult);     
 
             // CQRS

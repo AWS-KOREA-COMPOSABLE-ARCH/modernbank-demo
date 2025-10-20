@@ -133,7 +133,7 @@ public class TransferService {
 
         performDeposit(dpstAcntNo, trnfAmt, rcvMm);
 
-        transferHistory.setStsCd("3");
+        transferHistory.setStsCd("1");
         createTransferHistory(transferHistory);
         transferProducer.sendCQRSTransferMessage(transferHistory);
             
@@ -177,6 +177,7 @@ public class TransferService {
             builder.divCd(divCd);
         }
         if (stsCd != null) {
+System.out.println("stsCd at performWithdrawal in TransferService =====> " + stsCd);
             builder.stsCd(stsCd);
         }
 
