@@ -57,7 +57,48 @@ export default function Header() {
   }, []);
 
   // 상품 서비스 상태 확인
-  // TODO
+   useEffect(() => {
+    let isMounted = true;
+    
+    const checkProductServiceHealth = async () => {
+      if (!isMounted) return;
+      
+      if (isAuthenticated && user?.user_id) {
+        try {
+          const response = await fetch('/api/product/actuator/health', {
+            headers: {
+              'x-user-id': user.user_id,
+            },
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            if (isMounted) {
+              setProductServiceStatus(data);
+            }
+          } else {
+            if (isMounted) {
+              setProductServiceStatus({ status: 'DOWN' });
+            }
+          }
+        } catch (error) {
+          console.error('상품 서비스 상태 확인 실패:', error);
+          if (isMounted) {
+            setProductServiceStatus({ status: 'DOWN' });
+          }
+        }
+      }
+    };
+
+    checkProductServiceHealth();
+    // 10초마다 상태 확인
+    const interval = setInterval(checkProductServiceHealth, 10000);
+    
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, [isAuthenticated, user?.user_id]);
   
   // 모바일 메뉴 닫기 처리
   useEffect(() => {
