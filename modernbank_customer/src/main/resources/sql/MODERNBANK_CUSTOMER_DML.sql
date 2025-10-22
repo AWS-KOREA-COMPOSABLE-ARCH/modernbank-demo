@@ -1,5 +1,13 @@
+-- TB_CSTM 데이터 입력 (중복 방지)
 INSERT INTO TB_CSTM(CSTM_ID, CSTM_NM, CSTM_AGE, CSTM_GND, CSTM_PN, CSTM_ADR)
-VALUES('1111', 'Hong Gildong', '20', '1', '01012341234', 'Yeoksam'); 
+VALUES
+  ('1111', 'Hong Gildong', '20', '1','01012341234' , 'Yeoksam'),
+  ('2222', 'Hong Gilsoon', '20', '2','01043214321' , 'Gangnam')
+ON CONFLICT (CSTM_ID) DO NOTHING;
 
-INSERT INTO TB_CSTM(CSTM_ID, CSTM_NM, CSTM_AGE, CSTM_GND, CSTM_PN, CSTM_ADR)
-VALUES('2222', 'Hong Gilsoon', '20', '2', '01043214321', 'Gangnam'); 
+
+-- INSERT INTO TB_CSTM(CSTM_ID, CSTM_NM, CSTM_AGE, CSTM_GND, CSTM_PN, CSTM_ADR)
+-- VALUES('1111', 'Hong Gildong', '20', '1', '01012341234', 'Yeoksam'); 
+
+-- INSERT INTO TB_CSTM(CSTM_ID, CSTM_NM, CSTM_AGE, CSTM_GND, CSTM_PN, CSTM_ADR)
+-- VALUES('2222', 'Hong Gilsoon', '20', '2', '01043214321', 'Gangnam'); 
