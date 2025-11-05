@@ -586,6 +586,18 @@ export const messages = {
       transferLimitMinimum: '이체 한도는 0 이상이어야 합니다',
       depositAccountRequired: '입금 계좌번호는 필수입니다',
       withdrawalAccountRequired: '출금 계좌번호는 필수입니다'
+    },
+
+    // Chat
+    chat: {
+      title: '금융 챗봇',
+      connected: '연결됨',
+      offline: '오프라인',
+      placeholder: '메시지를 입력하세요...',
+      referenceDocs: '참고 문서',
+      source: '출처',
+      sendMessage: '메시지 전송',
+      closeChat: '채팅 닫기'
     }
   },
   
@@ -1177,6 +1189,18 @@ export const messages = {
       transferLimitMinimum: 'Transfer limit must be 0 or more',
       depositAccountRequired: 'Deposit account number is required',
       withdrawalAccountRequired: 'Withdrawal account number is required'
+    },
+
+    // Chat
+    chat: {
+      title: 'Financial Chatbot',
+      connected: 'Connected',
+      offline: 'Offline',
+      placeholder: 'Enter your message...',
+      referenceDocs: 'Reference Documents',
+      source: 'Source',
+      sendMessage: 'Send Message',
+      closeChat: 'Close Chat'
     }
   }
 } as const;

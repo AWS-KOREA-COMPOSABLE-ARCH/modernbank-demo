@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { PaperAirplaneIcon, XMarkIcon } from '@heroicons/react/24/solid';
+import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { v4 as uuidv4 } from "uuid";
-import { XMarkIcon, PaperAirplaneIcon } from '@heroicons/react/24/solid';
 
 interface Source {
   text: string;
@@ -21,12 +22,12 @@ interface ChatMessage {
   };
 }
 
-const BotMessage = ({ text, metadata }: Pick<ChatMessage, 'text' | 'metadata'>) => (
+const BotMessage = ({ text, metadata, t }: Pick<ChatMessage, 'text' | 'metadata'> & { t: (key: string) => string }) => (
   <>
     <div className="whitespace-pre-wrap mb-2 leading-relaxed">{text}</div>
     {metadata?.sources && metadata.sources.length > 0 && (
       <div className="mt-4 pt-3 border-t border-gray-100">
-        <h4 className="text-sm font-semibold text-gray-600 mb-2">📎 참고 문서</h4>
+        <h4 className="text-sm font-semibold text-gray-600 mb-2">📎 {t('chat.referenceDocs')}</h4>
         <div className="space-y-2">
           {metadata.sources.map((source, idx) => (
             <div
@@ -36,7 +37,7 @@ const BotMessage = ({ text, metadata }: Pick<ChatMessage, 'text' | 'metadata'>) 
               <p className="text-gray-700">{source.text}</p>
               {source.s3Location?.uri && (
                 <p className="text-xs text-blue-600 mt-1 truncate">
-                  출처: <a href={source.s3Location.uri} target="_blank" rel="noopener noreferrer">{source.s3Location.uri}</a>
+                  {t('chat.source')}: <a href={source.s3Location.uri} target="_blank" rel="noopener noreferrer">{source.s3Location.uri}</a>
                 </p>
               )}
             </div>
@@ -54,6 +55,7 @@ const UserMessage = ({ text }: { text: string }) => (
 const WS_URL = process.env.NEXT_PUBLIC_WS_URL || "ws://43.202.88.44:5000";
 
 export default function ChatWindow({ closeChat }: { closeChat: () => void }) {
+  const { t } = useLanguage();
   const [mounted, setMounted] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputValue, setInputValue] = useState("");
@@ -174,7 +176,7 @@ export default function ChatWindow({ closeChat }: { closeChat: () => void }) {
       {/* Header */}
       <div className="flex justify-between items-center bg-gradient-to-r from-[#0B1F3A] to-[#1C2D45] text-white px-5 py-4 rounded-t-xl">
         <h3 className="text-lg font-semibold tracking-tight flex items-center gap-2">
-          금융 챗봇
+          {t('chat.title')}
           <span
             className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
               isConnected ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
@@ -185,14 +187,14 @@ export default function ChatWindow({ closeChat }: { closeChat: () => void }) {
                 isConnected ? 'bg-green-500' : 'bg-red-500'
               }`}
             ></span>
-            {isConnected ? '연결됨' : '오프라인'}
+            {isConnected ? t('chat.connected') : t('chat.offline')}
           </span>
         </h3>
 
         <button
           onClick={closeChat}
           className="text-white hover:text-gray-300 transition-colors p-1 rounded-md"
-          aria-label="Close chat"
+          aria-label={t('chat.closeChat')}
         >
           <XMarkIcon className="w-5 h-5" />
         </button>
@@ -208,7 +210,7 @@ export default function ChatWindow({ closeChat }: { closeChat: () => void }) {
             <div className="max-w-[70%]">
               {msg.sender === "bot" ? (
                 <div className="bg-white border border-gray-200 rounded-xl px-4 py-3 shadow-sm text-sm text-gray-800">
-                  <BotMessage text={msg.text} metadata={msg.metadata} />
+                  <BotMessage text={msg.text} metadata={msg.metadata} t={t} />
                 </div>
               ) : (
                 <div className="bg-gradient-to-r from-[#1C4E80] to-[#0B1F3A] text-white px-5 py-3 rounded-xl shadow-md text-sm">
@@ -228,13 +230,13 @@ export default function ChatWindow({ closeChat }: { closeChat: () => void }) {
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
-            placeholder="메시지를 입력하세요..."
+            placeholder={t('chat.placeholder')}
             className="flex-1 px-4 py-2 border border-gray-300 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#1C4E80] transition"
           />
           <button
             onClick={handleSendMessage}
             className="p-2 bg-gradient-to-r from-[#1C4E80] to-[#0B1F3A] text-white rounded-full hover:opacity-90 transition shadow-md"
-            aria-label="Send message"
+            aria-label={t('chat.sendMessage')}
           >
             <PaperAirplaneIcon className="w-5 h-5 transform rotate-45" />
           </button>
