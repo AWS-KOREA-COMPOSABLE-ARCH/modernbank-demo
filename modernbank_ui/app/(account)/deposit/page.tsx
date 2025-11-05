@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { useSelector } from "react-redux";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { RootState } from "@/store/store";
+import { useCallback, useEffect, useState } from "react";
+import { useSelector } from "react-redux";
 
 interface AccountInfo {
   acntNm: string;
@@ -20,6 +21,7 @@ interface DepositResult {
 
 export default function Deposit() {
   const { user } = useSelector((state: RootState) => state.auth);
+  const { t } = useLanguage();
   const [accountList, setAccountList] = useState<AccountInfo[]>([]);
   const [selectedAccount, setSelectedAccount] = useState<string>("");
   const [accountInfo, setAccountInfo] = useState<AccountInfo | null>(null);
@@ -31,12 +33,12 @@ export default function Deposit() {
 
   const showModal = (message: string) => {
     setModalOpen(true);
-    setModalContent({ title: "알림", message });
+    setModalContent({ title: t('common.info'), message });
   };
 
   const fetchAccounts = useCallback(async () => {
     if (!user) {
-      showModal("사용자 인증이 필요합니다.");
+      showModal(t('account.authRequired'));
       return;
     }
 
@@ -50,7 +52,7 @@ export default function Deposit() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "계좌 정보를 찾을 수 없습니다.");
+        throw new Error(data.error || t('errors.accountNotFound'));
       }
 
       const accounts = Array.isArray(data) ? data : data.data || [];
@@ -59,12 +61,12 @@ export default function Deposit() {
       setSelectedAccount("");
       setAccountInfo(null);
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : "계좌 조회 중 오류가 발생했습니다.";
+      const errorMessage = error instanceof Error ? error.message : t('errors.accountInquiryFailed');
       showModal(errorMessage);
     } finally {
       setIsLoading(false);
     }
-  }, [user]);
+  }, [user, t]);
 
   useEffect(() => {
     if (user) {
@@ -91,22 +93,22 @@ export default function Deposit() {
 
       const contentType = response.headers.get('content-type');
       if (!contentType || !contentType.includes('application/json')) {
-        throw new Error('서버 응답이 JSON 형식이 아닙니다.');
+        throw new Error(t('errors.serverResponseNotJson'));
       }
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "계좌 정보를 찾을 수 없습니다.");
+        throw new Error(data.error || t('errors.accountNotFound'));
       }
 
       if (!data || typeof data !== 'object') {
-        throw new Error("계좌 정보를 찾을 수 없습니다.");
+        throw new Error(t('errors.accountNotFound'));
       }
 
       setAccountInfo(data);
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : "계좌 조회 중 오류가 발생했습니다.";
+      const errorMessage = error instanceof Error ? error.message : t('errors.accountInquiryFailed');
       showModal(errorMessage);
       setAccountInfo(null);
     } finally {
@@ -116,13 +118,13 @@ export default function Deposit() {
 
   const handleDeposit = async () => {
     if (!accountInfo) {
-      showModal("계좌를 먼저 선택하세요.");
+      showModal(t('account.selectAccountFirst'));
       return;
     }
 
     const amount = parseFloat(depositAmount);
     if (isNaN(amount) || amount <= 0) {
-      showModal("유효한 입금 금액을 입력해주세요.");
+      showModal(t('account.enterValidAmount'));
       return;
     }
 
@@ -144,17 +146,17 @@ export default function Deposit() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "입금 처리 실패.");
+        throw new Error(data.error || t('account.depositFailed'));
       }
 
       setDepositResult(data);
-      showModal(`입금 완료! 금액: ${amount.toLocaleString()} 원`);
+      showModal(`${t('account.depositCompleted')} ${t('account.amount')}: ${amount.toLocaleString()} ${t('common.currency')}`);
       setAccountInfo((prev) =>
         prev ? { ...prev, acntBlnc: prev.acntBlnc + amount } : prev
       );
       setDepositAmount("");
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : "입금 처리 중 오류가 발생했습니다.";
+      const errorMessage = error instanceof Error ? error.message : t('account.depositProcessingError');
       showModal(errorMessage);
     } finally {
       setIsLoading(false);
@@ -166,10 +168,10 @@ export default function Deposit() {
       {/* 페이지 타이틀 */}
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-8">
         <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">
-          입금
+          {t('account.deposit')}
         </h2>
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-          계좌를 선택하고 입금할 금액을 입력하세요.
+          {t('account.selectAccountDesc')}
         </p>
       </div>
 
@@ -182,7 +184,7 @@ export default function Deposit() {
               htmlFor="accountSelect"
               className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
             >
-              계좌 선택
+              {t('account.selectAccount')}
             </label>
             <select
               id="accountSelect"
@@ -190,7 +192,7 @@ export default function Deposit() {
               onChange={(e) => handleSelectAccount(e.target.value)}
               className="w-full px-4 py-2.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
             >
-              <option value="">계좌를 선택하세요</option>
+              <option value="">{t('account.selectAccountDesc')}</option>
               {accountList.map((account) => (
                 <option key={account.acntNo} value={account.acntNo}>
                   {account.acntNm} ({account.acntNo})
@@ -203,21 +205,21 @@ export default function Deposit() {
           {accountInfo && (
             <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
               <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                계좌 정보
+                {t('account.accountInfo')}
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">계좌명</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{t('account.accountName')}</p>
                   <p className="text-sm font-medium text-gray-900 dark:text-white">{accountInfo.acntNm}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">계좌번호</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{t('account.number')}</p>
                   <p className="text-sm font-medium text-gray-900 dark:text-white">{accountInfo.acntNo}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">현재 잔액</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{t('account.balance')}</p>
                   <p className="text-sm font-medium text-gray-900 dark:text-white">
-                    {accountInfo.acntBlnc.toLocaleString()} 원
+                    {accountInfo.acntBlnc.toLocaleString()} {t('common.currency')}
                   </p>
                 </div>
               </div>
@@ -231,7 +233,7 @@ export default function Deposit() {
                 htmlFor="depositAmount"
                 className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
               >
-                입금할 금액
+                {t('account.depositAmount')}
               </label>
               <div className="relative">
                 <input
@@ -245,10 +247,10 @@ export default function Deposit() {
                     setDepositAmount(numericValue);
                   }}
                   className="w-full px-4 py-2.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 pr-12 text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                  placeholder="입금할 금액을 입력하세요"
+                  placeholder={t('account.enterDepositAmount')}
                 />
                 <div className="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none">
-                  <span className="text-gray-500 dark:text-gray-400">원</span>
+                  <span className="text-gray-500 dark:text-gray-400">{t('common.currency')}</span>
                 </div>
               </div>
             </div>
@@ -268,9 +270,9 @@ export default function Deposit() {
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                   </svg>
-                  입금 중...
+                  {t('account.depositing')}
                 </span>
-              ) : '입금하기'}
+              ) : t('account.makeDeposit')}
             </button>
           )}
         </div>
@@ -280,25 +282,25 @@ export default function Deposit() {
       {depositResult && (
         <div className="mt-8 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-            입금 결과
+            {t('account.depositResult')}
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <p className="text-xs text-gray-500 dark:text-gray-400">입금 전 잔고</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">{t('account.balanceBefore')}</p>
               <p className="text-sm font-medium text-gray-900 dark:text-white">
-                {depositResult.formerBlnc.toLocaleString()} 원
+                {depositResult.formerBlnc.toLocaleString()} {t('common.currency')}
               </p>
             </div>
             <div>
-              <p className="text-xs text-gray-500 dark:text-gray-400">입금액</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">{t('account.depositAmount')}</p>
               <p className="text-sm font-medium text-gray-900 dark:text-white">
-                {depositResult.trnsAmt.toLocaleString()} 원
+                {depositResult.trnsAmt.toLocaleString()} {t('common.currency')}
               </p>
             </div>
             <div>
-              <p className="text-xs text-gray-500 dark:text-gray-400">현재 잔고</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">{t('account.currentBalance')}</p>
               <p className="text-sm font-medium text-gray-900 dark:text-white">
-                {depositResult.acntBlnc.toLocaleString()} 원
+                {depositResult.acntBlnc.toLocaleString()} {t('common.currency')}
               </p>
             </div>
           </div>
@@ -320,7 +322,7 @@ export default function Deposit() {
                 onClick={() => setModalOpen(false)}
                 className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm transition-colors duration-200"
               >
-                확인
+                {t('common.confirm')}
               </button>
             </div>
           </div>

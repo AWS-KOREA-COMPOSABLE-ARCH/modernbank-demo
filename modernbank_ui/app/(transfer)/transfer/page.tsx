@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { useSelector } from "react-redux";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { RootState } from "@/store/store";
 import { Dialog, DialogPanel, DialogTitle } from "@headlessui/react";
+import { useCallback, useEffect, useState } from "react";
+import { useSelector } from "react-redux";
 
 interface AccountInfo {
   acntNm: string;
@@ -19,6 +20,7 @@ interface TransferLimit {
 
 export default function TransferPage() {
   const { user } = useSelector((state: RootState) => state.auth);
+  const { t } = useLanguage();
   const [accounts, setAccounts] = useState<AccountInfo[]>([]);
   const [selectedFromAccount, setSelectedFromAccount] = useState<string>("");
   const [selectedToAccount, setSelectedToAccount] = useState<string>("");
@@ -49,7 +51,7 @@ export default function TransferPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "계좌 정보를 찾을 수 없습니다.");
+        throw new Error(data.error || t('transfer.accountNotFound'));
       }
 
       const accounts = Array.isArray(data) ? data : data.data || [];
@@ -57,9 +59,9 @@ export default function TransferPage() {
     } catch (error) {
       // 콘솔 에러 대신 모달 사용
       if (error instanceof Error) {
-        showModal("오류", error.message);
+        showModal(t('common.error'), error.message);
       } else {
-        showModal("오류", "계좌 조회 중 오류가 발생했습니다.");
+        showModal(t('common.error'), t('transfer.accountInquiryError'));
       }
     }
   }, [user]);
@@ -74,7 +76,7 @@ export default function TransferPage() {
       });
       
       if (!response.ok) {
-        throw new Error("이체 한도를 조회할 수 없습니다.");
+        throw new Error(t('transfer.transferLimitInquiryFailed'));
       }
       
       const data = await response.json();
@@ -82,9 +84,9 @@ export default function TransferPage() {
     } catch (error) {
       // 콘솔 에러 대신 모달 사용
       if (error instanceof Error) {
-        showModal("오류", error.message);
+        showModal(t('common.error'), error.message);
       } else {
-        showModal("오류", "이체 한도 조회 중 오류가 발생했습니다.");
+        showModal(t('common.error'), t('transfer.transferLimitInquiryFailed'));
       }
     }
   }, [user]);
@@ -107,17 +109,17 @@ export default function TransferPage() {
 
       const contentType = response.headers.get('content-type');
       if (!contentType || !contentType.includes('application/json')) {
-        throw new Error('서버 응답이 JSON 형식이 아닙니다.');
+        throw new Error(t('transfer.serverResponseNotJson'));
       }
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "계좌 정보를 찾을 수 없습니다.");
+        throw new Error(data.error || t('transfer.accountNotFound'));
       }
 
       if (!data || typeof data !== 'object') {
-        throw new Error("계좌 정보를 찾을 수 없습니다.");
+        throw new Error(t('transfer.accountNotFound'));
       }
 
       setAccounts(prevAccounts => 
@@ -130,32 +132,32 @@ export default function TransferPage() {
     } catch (error: unknown) {
       // alert 대신 모달 사용
       if (error instanceof Error) {
-        showModal("오류", error.message);
+        showModal(t('common.error'), error.message);
       } else {
-        showModal("오류", "계좌 조회 중 오류가 발생했습니다.");
+        showModal(t('common.error'), t('transfer.accountInquiryError'));
       }
     }
   };
 
   const handleTransfer = async () => {
     if (!amount || Number(amount) <= 0) {
-      showModal("경고", "이체 금액을 올바르게 입력하세요.");
+      showModal(t('common.warning'), t('transfer.enterValidAmount'));
       return;
     }
     if (!selectedFromAccount) {
-      showModal("경고", "출금 계좌를 먼저 선택하세요.");
+      showModal(t('common.warning'), t('transfer.selectFromAccountFirst'));
       return;
     }
     if (!selectedToAccount.trim()) {
-      showModal("경고", "입금 계좌를 입력하세요.");
+      showModal(t('common.warning'), t('transfer.enterToAccount'));
       return;
     }
     if (Number(amount) > (accounts.find(a => a.acntNo === selectedFromAccount)?.acntBlnc ?? 0)) {
-      showModal("경고", "잔액이 부족합니다.");
+      showModal(t('common.warning'), t('transfer.insufficientBalance'));
       return;
     }
     if (transferLimit && Number(amount) > transferLimit.oneTmTrnfLmt) {
-      showModal("경고", `이체 금액이 1회 한도(${transferLimit.oneTmTrnfLmt.toLocaleString()} 원)를 초과했습니다.`);
+      showModal(t('common.warning'), `${t('transfer.exceedsLimit')} (${transferLimit.oneTmTrnfLmt.toLocaleString()} ${t('common.currency')})`);
       return;
     }
 
@@ -180,18 +182,18 @@ export default function TransferPage() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || "이체 처리 중 오류가 발생했습니다.");
+        throw new Error(errorData.message || t('transfer.processingError'));
       }
 
       await response.json();
-      showModal("성공", `이체 완료! 금액: ${Number(amount).toLocaleString()} 원`);
+      showModal(t('common.success'), `${t('transfer.completed')} ${t('transfer.amount_')} ${Number(amount).toLocaleString()} ${t('common.currency')}`);
       fetchAccounts();
       setAmount("");
     } catch (error: unknown) {
       if (error instanceof Error) {
-        showModal("오류", error.message);
+        showModal(t('common.error'), error.message);
       } else {
-        showModal("오류", "이체 처리 중 오류가 발생했습니다.");
+        showModal(t('common.error'), t('transfer.processingError'));
       }
     } finally {
       setIsLoading(false);
@@ -203,10 +205,10 @@ export default function TransferPage() {
       {/* 페이지 타이틀 */}
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-8">
         <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">
-          당행 이체
+          {t('transfer.internal')}
         </h2>
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-          계좌를 선택하고 이체할 금액을 입력하세요.
+          {t('transfer.internalDesc')}
         </p>
       </div>
 
@@ -219,7 +221,7 @@ export default function TransferPage() {
               htmlFor="fromAccount"
               className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
             >
-              출금 계좌
+              {t('transfer.fromAccount')}
             </label>
             <select
               id="fromAccount"
@@ -227,7 +229,7 @@ export default function TransferPage() {
               onChange={(e) => handleSelectAccount(e.target.value)}
               className="w-full px-4 py-2.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
             >
-              <option value="">출금 계좌를 선택하세요</option>
+              <option value="">{t('transfer.selectFromAccount')}</option>
               {accounts.map((account) => (
                 <option key={account.acntNo} value={account.acntNo}>
                   {account.acntNm} ({account.acntNo})
@@ -236,9 +238,9 @@ export default function TransferPage() {
             </select>
             {accounts.find(a => a.acntNo === selectedFromAccount) && (
               <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-                현재 잔액:{" "}
+                {t('transfer.currentBalance')}:{" "}
                 <span className="font-medium text-gray-900 dark:text-white">
-                  {accounts.find(a => a.acntNo === selectedFromAccount)?.acntBlnc.toLocaleString() ?? "0"} 원
+                  {accounts.find(a => a.acntNo === selectedFromAccount)?.acntBlnc.toLocaleString() ?? "0"} {t('common.currency')}
                 </span>
               </p>
             )}
@@ -248,7 +250,7 @@ export default function TransferPage() {
           {selectedFromAccount && (
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                이체 유형
+                {t('transfer.transferType')}
               </label>
               <div className="grid grid-cols-2 gap-4">
                 <button
@@ -260,13 +262,13 @@ export default function TransferPage() {
                       : "bg-gray-300 text-gray-500 cursor-not-allowed"
                   }`}
                 >
-                  내 계좌로 이체
+                  {t('transfer.toMyAccount')}
                 </button>
                 <button
                   onClick={() => setTransferType("other")}
                   className="px-4 py-2.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg"
                 >
-                  다른 사람에게 이체
+                  {t('transfer.toOtherAccount')}
                 </button>
               </div>
             </div>
@@ -279,7 +281,7 @@ export default function TransferPage() {
                 htmlFor="toAccount"
                 className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
               >
-                {transferType === "self" ? "입금 계좌" : "입금 계좌번호"}
+                {transferType === "self" ? t('transfer.toAccount') : t('transfer.toAccountNumber')}
               </label>
               {transferType === "self" ? (
                 <select
@@ -288,7 +290,7 @@ export default function TransferPage() {
                   onChange={(e) => setSelectedToAccount(e.target.value)}
                   className="w-full px-4 py-2.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="">내 계좌를 선택하세요</option>
+                  <option value="">{t('transfer.selectMyAccount')}</option>
                   {accounts
                     .filter((account) => account.acntNo !== selectedFromAccount)
                     .map((account) => (
@@ -303,7 +305,7 @@ export default function TransferPage() {
                   type="text"
                   value={selectedToAccount}
                   onChange={(e) => setSelectedToAccount(e.target.value)}
-                  placeholder="입금 계좌번호를 입력하세요"
+                  placeholder={t('transfer.enterAccountNumber')}
                   className="w-full px-4 py-2.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
                 />
               )}
@@ -316,7 +318,7 @@ export default function TransferPage() {
               htmlFor="amount"
               className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
             >
-              이체 금액
+              {t('transfer.amount')}
             </label>
             <div className="relative">
               <input
@@ -327,11 +329,11 @@ export default function TransferPage() {
                   const numericValue = e.target.value.replace(/\D/g, "");
                   setAmount(numericValue);
                 }}
-                placeholder="이체 금액을 입력하세요"
+                placeholder={t('transfer.enterAmount')}
                 className="w-full px-4 py-2.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
               />
               <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                <span className="text-gray-500 dark:text-gray-400 text-sm">원</span>
+                <span className="text-gray-500 dark:text-gray-400 text-sm">{t('common.currency')}</span>
               </div>
             </div>
           </div>
@@ -342,14 +344,14 @@ export default function TransferPage() {
               htmlFor="sendMemo"
               className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
             >
-              내 통장 메모
+              {t('transfer.myMemo')}
             </label>
             <input
               id="sendMemo"
               type="text"
               value={sendMemo}
               onChange={(e) => setSendMemo(e.target.value)}
-              placeholder="메모 입력 (선택)"
+              placeholder={t('transfer.enterMemo')}
               className="w-full px-4 py-2.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
             />
           </div>
@@ -360,14 +362,14 @@ export default function TransferPage() {
               htmlFor="receiveMemo"
               className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
             >
-              받는 통장 메모
+              {t('transfer.receiveMemo')}
             </label>
             <input
               id="receiveMemo"
               type="text"
               value={receiveMemo}
               onChange={(e) => setReceiveMemo(e.target.value)}
-              placeholder="받는 사람에게 표시될 메모 입력 (선택)"
+              placeholder={t('transfer.enterReceiveMemo')}
               className="w-full px-4 py-2.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
             />
           </div>
@@ -384,9 +386,9 @@ export default function TransferPage() {
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                 </svg>
-                이체 중...
+                {t('transfer.transferring')}
               </span>
-            ) : '이체하기'}
+            ) : t('transfer.transfer')}
           </button>
         </div>
       </div>
@@ -413,7 +415,7 @@ export default function TransferPage() {
                 onClick={() => setModalOpen(false)}
                 className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm transition-colors duration-200"
               >
-                확인
+                {t('common.confirm')}
               </button>
             </div>
           </DialogPanel>

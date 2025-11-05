@@ -1,42 +1,43 @@
-import { NextRequest, NextResponse } from "next/server";
 import apiClient from "@/utils/apiClient";
+import { getApiMessage } from "@/utils/apiI18n";
+import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 
-// 계좌 생성 요청 스키마 정의
+// 계좌 생성 요청 스키마 정의 (기본 영어 메시지 사용)
 const accountSchema = z.object({
-  acntNo: z.string().min(1, "계좌번호는 필수입니다"),
-  cstmId: z.string().min(1, "고객 ID는 필수입니다"),
-  cstmNm: z.string().min(1, "고객명은 필수입니다"),
-  acntNm: z.string().min(1, "계좌명은 필수입니다"),
+  acntNo: z.string().min(1, "Account number is required"),
+  cstmId: z.string().min(1, "Customer ID is required"),
+  cstmNm: z.string().min(1, "Customer name is required"),
+  acntNm: z.string().min(1, "Account name is required"),
   newDtm: z.string().optional(),
-  acntBlnc: z.number().min(0, "계좌 잔액은 0 이상이어야 합니다").optional(),
+  acntBlnc: z.number().min(0, "Account balance must be 0 or more").optional(),
 });
 
 // 거래 요청 스키마 정의 (입금/출금 공통)
 const transactionSchema = z.object({
-  acntNo: z.string().min(1, "계좌번호는 필수입니다"),
+  acntNo: z.string().min(1, "Account number is required"),
   seq: z.number().default(0),
   divCd: z.string().default("D"),
   stsCd: z.string().default("C"),
-  trnsAmt: z.number().min(1, "거래금액은 1원 이상이어야 합니다"),
-  acntBlnc: z.number().min(0, "계좌 잔액은 0 이상이어야 합니다"),
+  trnsAmt: z.number().min(1, "Transaction amount must be 1 or more"),
+  acntBlnc: z.number().min(0, "Account balance must be 0 or more"),
   trnsBrnch: z.string().default(""),
   trnsDtm: z.string().optional(),
 });
 
 // 타행 이체 확인 스키마 정의
 const confirmWithdrawalSchema = z.object({
-  acntNo: z.string().min(1, "계좌번호는 필수입니다"),
+  acntNo: z.string().min(1, "Account number is required"),
   seq: z.number(),
   divCd: z.string(),
   stsCd: z.string().refine(
     val => val === "1" || val === "2", 
     {
-      message: "상태 코드는 '1'(확인) 또는 '2'(취소)만 가능합니다"
+      message: "Status code must be '1'(confirm) or '2'(cancel) only"
     }
   ),
-  trnsAmt: z.number().min(1, "거래금액은 1원 이상이어야 합니다"),
-  acntBlnc: z.number().min(0, "계좌 잔액은 0 이상이어야 합니다"),
+  trnsAmt: z.number().min(1, "Transaction amount must be 1 or more"),
+  acntBlnc: z.number().min(0, "Account balance must be 0 or more"),
   trnsBrnch: z.string(),
   trnsDtm: z.string().optional(),
 });
@@ -52,7 +53,7 @@ export async function GET(request: NextRequest) {
   const accountNo = searchParams.get("accountNo");
 
   if (!path) {
-    return NextResponse.json({ error: "Path is required" }, { status: 400 });
+    return NextResponse.json({ error: getApiMessage(request, "api.pathRequired") }, { status: 400 });
   }
 
   try {
@@ -60,36 +61,36 @@ export async function GET(request: NextRequest) {
     switch (path) {
       case "accounts":
         if (!customerId) {
-          return NextResponse.json({ error: "Customer ID is required" }, { status: 400 });
+          return NextResponse.json({ error: getApiMessage(request, "api.customerIdRequired") }, { status: 400 });
         }
         response = await apiClient("ACCOUNT", `/customer/${customerId}/accounts`, "GET");
         break;
       case "account":
         if (!accountNo) {
-          return NextResponse.json({ error: "Account number is required" }, { status: 400 });
+          return NextResponse.json({ error: getApiMessage(request, "api.accountNumberRequired") }, { status: 400 });
         }
         response = await apiClient("ACCOUNT", `/${accountNo}`, "GET");
         break;
       case "balance":
         if (!accountNo) {
-          return NextResponse.json({ error: "Account number is required" }, { status: 400 });
+          return NextResponse.json({ error: getApiMessage(request, "api.accountNumberRequired") }, { status: 400 });
         }
         response = await apiClient("ACCOUNT", `/${accountNo}/balance`, "GET");
         return NextResponse.json(response.data);
       case "transactions":
         if (!accountNo) {
-          return NextResponse.json({ error: "Account number is required" }, { status: 400 });
+          return NextResponse.json({ error: getApiMessage(request, "api.accountNumberRequired") }, { status: 400 });
         }
         response = await apiClient("ACCOUNT", `/${accountNo}/transactions`, "GET");
         break;
       default:
-        return NextResponse.json({ error: "Invalid path" }, { status: 400 });
+        return NextResponse.json({ error: getApiMessage(request, "api.invalidPath") }, { status: 400 });
     }
 
     return NextResponse.json(response.data);
   } catch (error: unknown) {
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Internal server error" },
+      { error: error instanceof Error ? error.message : getApiMessage(request, "api.internalServerError") },
       { status: 500 }
     );
   }
@@ -174,7 +175,7 @@ export async function POST(request: NextRequest) {
     
     console.error("API 오류:", error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "서버 오류가 발생했습니다" },
+      { error: error instanceof Error ? error.message : getApiMessage(request, "api.serverError") },
       { status: 500 }
     );
   }

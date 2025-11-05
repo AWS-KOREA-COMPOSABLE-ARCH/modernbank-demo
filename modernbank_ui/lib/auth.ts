@@ -1,6 +1,6 @@
+import apiClient from "@/utils/apiClient";
 import { AuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import apiClient from "@/utils/apiClient";
 
 export const authOptions: AuthOptions = {
   providers: [
@@ -13,7 +13,7 @@ export const authOptions: AuthOptions = {
       async authorize(credentials) {
         try {
           if (!credentials?.user_id || !credentials?.password) {
-            throw new Error("아이디와 비밀번호를 입력해주세요.");
+            throw new Error("Please enter user ID and password.");
           }
 
           const response = await apiClient("AUTH", "", "POST", {
@@ -22,7 +22,7 @@ export const authOptions: AuthOptions = {
           });
 
           if (!response?.data) {
-            throw new Error("로그인에 실패했습니다.");
+            throw new Error("Login failed.");
           }
 
           return {
@@ -32,7 +32,7 @@ export const authOptions: AuthOptions = {
           };
         } catch (error: unknown) {
           console.error("[NextAuth] Error:", error);
-          const errorMessage = error instanceof Error ? error.message : "서버 오류가 발생했습니다.";
+          const errorMessage = error instanceof Error ? error.message : "Server error occurred.";
           throw new Error(errorMessage);
         }
       }

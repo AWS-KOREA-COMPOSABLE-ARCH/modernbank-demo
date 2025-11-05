@@ -1,10 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useSelector } from "react-redux";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { RootState } from "@/store/store";
+import { formatCurrency } from "@/utils/currency";
 import { Dialog, DialogTitle } from "@headlessui/react";
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useSelector } from "react-redux";
 
 interface Account {
   acntNm: string;
@@ -25,6 +27,7 @@ interface CustomerData {
 export default function RetrieveCustomer() {
   const router = useRouter();
   const { user } = useSelector((state: RootState) => state.auth);
+  const { t, language } = useLanguage();
   const [customerData, setCustomerData] = useState<CustomerData | null>(null);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [loading, setLoading] = useState(false);
@@ -37,7 +40,7 @@ export default function RetrieveCustomer() {
       fetchCustomerData(user.user_id);
       fetchAccounts(user.user_id);
     } else {
-      setErrorMessage("로그인이 필요합니다.");
+      setErrorMessage(t('customer.loginRequired'));
       setErrorModalOpen(true);
       router.push('/signin');
     }
@@ -57,15 +60,15 @@ export default function RetrieveCustomer() {
       const responseData = await apiResponse.json();
 
       if (!apiResponse.ok) {
-        setErrorMessage(responseData.error || "고객 정보를 가져오는데 실패했습니다.");
+        setErrorMessage(responseData.error || t('customer.customerInquiryFailed'));
         setErrorModalOpen(true);
         return;
       }
 
       setCustomerData(responseData);
     } catch (error: unknown) {
-      console.error("고객 조회 실패:", error);
-      setErrorMessage(error instanceof Error ? error.message : "알 수 없는 오류가 발생했습니다.");
+      console.error(t('customer.customerInquiryError'), error);
+      setErrorMessage(error instanceof Error ? error.message : t('errors.unknownError'));
       setErrorModalOpen(true);
     } finally {
       setLoading(false);
@@ -84,14 +87,14 @@ export default function RetrieveCustomer() {
       const responseData = await apiResponse.json();
 
       if (!apiResponse.ok) {
-        console.error("계좌 정보 조회 실패:", responseData.error);
+        console.error(t('customer.accountInquiryError'), responseData.error);
         return;
       }
 
       const accountsData = Array.isArray(responseData) ? responseData : responseData.data || [];
       setAccounts(accountsData);
     } catch (error: unknown) {
-      console.error("계좌 조회 실패:", error);
+      console.error(t('customer.accountInquiryError'), error);
     }
   };
 
@@ -100,14 +103,15 @@ export default function RetrieveCustomer() {
     if (!dateString) return '-';
     try {
       const date = new Date(dateString);
-      return date.toLocaleString('ko-KR', {
+      const locale = language === 'ko' ? 'ko-KR' : 'en-US';
+      return date.toLocaleString(locale, {
         year: 'numeric',
         month: '2-digit',
         day: '2-digit',
         hour: '2-digit',
         minute: '2-digit',
         second: '2-digit',
-        hour12: false
+        hour12: language === 'en'
       });
     } catch (error) {
       return dateString;
@@ -118,7 +122,7 @@ export default function RetrieveCustomer() {
   const handleSearch = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!user?.user_id) {
-      setErrorMessage("고객 ID를 찾을 수 없습니다.");
+      setErrorMessage(t('customer.customerIdNotFound'));
       setErrorModalOpen(true);
       return;
     }
@@ -132,17 +136,17 @@ export default function RetrieveCustomer() {
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
         <div className="p-6">
           <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">
-            고객 조회
+            {t('customer.inquiry')}
           </h2>
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            고객의 상세 정보와 보유 계좌를 조회합니다.
+            {t('customer.inquiryDesc')}
           </p>
 
           <form onSubmit={handleSearch} className="mt-6">
             <div className="flex flex-wrap items-end gap-4">
               <div className="flex-grow max-w-xs">
                 <label htmlFor="cstmId" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  고객 ID
+                  {t('customer.customerId')}
                 </label>
                 <input
                   id="cstmId"
@@ -163,9 +167,9 @@ export default function RetrieveCustomer() {
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                     </svg>
-                    조회중...
+                    {t('customer.inquiring')}
                   </span>
-                ) : '조회하기'}
+                ) : t('customer.inquiryButton')}
               </button>
             </div>
           </form>
@@ -176,31 +180,31 @@ export default function RetrieveCustomer() {
       <div className="mt-8 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
         <div className="p-6">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-            고객 상세정보
+            {t('customer.detailInfo')}
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <div className="space-y-1">
-              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">고객ID</p>
+              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{t('customer.customerId')}</p>
               <p className="text-sm text-gray-900 dark:text-white">{customerData?.cstmId ?? '-'}</p>
             </div>
             <div className="space-y-1">
-              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">이름</p>
+              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{t('customer.customerName')}</p>
               <p className="text-sm text-gray-900 dark:text-white">{customerData?.cstmNm ?? '-'}</p>
             </div>
             <div className="space-y-1">
-              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">성별</p>
+              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{t('customer.gender')}</p>
               <p className="text-sm text-gray-900 dark:text-white">{customerData?.cstmGnd ?? '-'}</p>
             </div>
             <div className="space-y-1">
-              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">나이</p>
+              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{t('customer.age')}</p>
               <p className="text-sm text-gray-900 dark:text-white">{customerData?.cstmAge ?? '-'}</p>
             </div>
             <div className="space-y-1">
-              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">주소</p>
+              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{t('customer.address')}</p>
               <p className="text-sm text-gray-900 dark:text-white">{customerData?.cstmAdr ?? '-'}</p>
             </div>
             <div className="space-y-1">
-              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">전화번호</p>
+              <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{t('customer.phone')}</p>
               <p className="text-sm text-gray-900 dark:text-white">{customerData?.cstmPn ?? '-'}</p>
             </div>
           </div>
@@ -211,16 +215,16 @@ export default function RetrieveCustomer() {
       <div className="mt-8 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
         <div className="p-6">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-            보유 계좌 목록
+            {t('customer.accountList')}
           </h3>
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr className="border-b border-gray-200 dark:border-gray-700">
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">계좌명</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">계좌번호</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">잔액</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">개설일시</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('customer.accountName')}</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('customer.accountNumber')}</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('customer.balance')}</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('customer.openDateTime')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
@@ -232,7 +236,7 @@ export default function RetrieveCustomer() {
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                         </svg>
-                        계좌 정보를 불러오는 중입니다...
+                        {t('customer.loadingAccountInfo')}
                       </div>
                     </td>
                   </tr>
@@ -242,7 +246,7 @@ export default function RetrieveCustomer() {
                       <td className="px-4 py-3 text-sm text-gray-900 dark:text-white whitespace-nowrap">{account.acntNm}</td>
                       <td className="px-4 py-3 text-sm text-gray-900 dark:text-white font-medium whitespace-nowrap">{account.acntNo}</td>
                       <td className="px-4 py-3 text-sm text-gray-900 dark:text-white whitespace-nowrap">
-                        {new Intl.NumberFormat('ko-KR', { style: 'currency', currency: 'KRW' }).format(account.acntBlnc)}
+                        {formatCurrency(account.acntBlnc, language)}
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">{formatDate(account.newDtm)}</td>
                     </tr>
@@ -254,7 +258,7 @@ export default function RetrieveCustomer() {
                         <svg className="h-8 w-8 text-gray-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
                         </svg>
-                        보유한 계좌가 없습니다.
+                        {t('customer.noAccounts')}
                       </div>
                     </td>
                   </tr>
@@ -274,7 +278,7 @@ export default function RetrieveCustomer() {
         <div className="flex items-center justify-center min-h-screen p-4">
           <Dialog.Panel className="w-full max-w-md bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
             <DialogTitle className="text-lg font-semibold text-gray-900 dark:text-white">
-              오류 발생
+              {t('customer.errorOccurred')}
             </DialogTitle>
             <div className="mt-2 text-sm text-gray-700 dark:text-gray-300">{errorMessage}</div>
             <div className="mt-6 flex justify-end">
@@ -282,7 +286,7 @@ export default function RetrieveCustomer() {
                 onClick={() => setErrorModalOpen(false)}
                 className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
               >
-                확인
+                {t('common.confirm')}
               </button>
             </div>
           </Dialog.Panel>

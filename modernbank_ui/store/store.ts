@@ -1,14 +1,14 @@
 // src/store/store.ts
 import { configureStore } from '@reduxjs/toolkit';
-import authReducer from './slices/authSlice';
 import customerReducer from './customerSlice';
+import authReducer from './slices/authSlice';
 
 export const store = configureStore({
     reducer: {
         auth: authReducer,
         customer: customerReducer,
     },
-    devTools: process.env.NODE_ENV !== 'production', // 개발 환경에서만 Redux DevTools 활성화
+    devTools: process.env.NODE_ENV !== 'production', // Enable Redux DevTools only in development
 });
 
 export type RootState = ReturnType<typeof store.getState>;

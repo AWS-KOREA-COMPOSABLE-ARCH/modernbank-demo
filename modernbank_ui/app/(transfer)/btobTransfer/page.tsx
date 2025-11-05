@@ -1,8 +1,9 @@
 "use client";
 
+import { useLanguage } from "@/contexts/LanguageContext";
 import { RootState } from "@/store/store";
 import { Dialog, DialogTitle } from "@headlessui/react";
-import { useEffect, useState, useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 
 interface AccountInfo {
@@ -20,6 +21,7 @@ interface TransferLimit {
 
 export default function BtobTransfer() {
     const { user } = useSelector((state: RootState) => state.auth);
+    const { t } = useLanguage();
     const [accountList, setAccountList] = useState<AccountInfo[]>([]);
     const [wthdAcntNo, setWthdAcntNo] = useState<string>(""); // 출금 계좌 선택
     const [dpstAcntNo, setDpstAcntNo] = useState<string>(""); // 입금 계좌번호 입력
@@ -57,7 +59,7 @@ export default function BtobTransfer() {
             const data = await response.json();
 
             if (!response.ok) {
-                throw new Error(data.error || "계좌 정보를 찾을 수 없습니다.");
+                throw new Error(data.error || t('transfer.accountNotFound'));
             }
 
             const accounts = Array.isArray(data) ? data : data.data || [];
@@ -66,7 +68,7 @@ export default function BtobTransfer() {
             setError(
                 error instanceof Error
                     ? error.message
-                    : "계좌 조회 중 오류가 발생했습니다."
+                    : t('transfer.accountInquiryError')
             );
         } finally {
             setIsLoading(false);
@@ -95,7 +97,7 @@ export default function BtobTransfer() {
                 setTransferLimit(data);
             }
         } catch (error) {
-            console.error('이체 한도 조회 실패:', error);
+            console.error(t('transfer.transferLimitInquiryFailed'), error);
         }
     }, [user]);
 
@@ -120,17 +122,17 @@ export default function BtobTransfer() {
 
             const contentType = response.headers.get('content-type');
             if (!contentType || !contentType.includes('application/json')) {
-                throw new Error('서버 응답이 JSON 형식이 아닙니다.');
+                throw new Error(t('transfer.serverResponseNotJson'));
             }
 
             const data = await response.json();
 
             if (!response.ok) {
-                throw new Error(data.error || "계좌 정보를 찾을 수 없습니다.");
+                throw new Error(data.error || t('transfer.accountNotFound'));
             }
 
             if (!data || typeof data !== 'object') {
-                throw new Error("계좌 정보를 찾을 수 없습니다.");
+                throw new Error(t('transfer.accountNotFound'));
             }
 
             setAccountInfo(data);
@@ -152,7 +154,7 @@ export default function BtobTransfer() {
             setError(
                 error instanceof Error
                     ? error.message
-                    : "출금 계좌 조회 중 오류가 발생했습니다."
+                    : t('transfer.withdrawalAccountInquiryError')
             );
         } finally {
             setIsLoading(false);
@@ -162,42 +164,42 @@ export default function BtobTransfer() {
     const handleTransfer = async (stsCd: number) => {
         // 초기 로딩 중인지 확인
         if (isInitialLoading) {
-            showModal("로딩 중", "데이터를 불러오는 중입니다. 잠시 후 다시 시도해주세요.");
+            showModal(t('transfer.loading'), t('transfer.loadingData'));
             return;
         }
 
         if (!accountInfo) {
-            showModal("경고", "출금 계좌를 먼저 선택하세요.");
+            showModal(t('transfer.warning'), t('transfer.selectFromAccountFirst'));
             return;
         }
         if (!dpstAcntNo.trim()) {
-            showModal("경고", "입금 계좌번호를 입력하세요.");
+            showModal(t('transfer.warning'), t('transfer.enterToAccountNumber'));
             return;
         }
         if (trnfAmt <= 0) {
-            showModal("경고", "이체 금액은 0원보다 커야 합니다.");
+            showModal(t('transfer.warning'), t('transfer.amountMustBePositive'));
             return;
         }
         if (accountBalance === null) {
-            showModal("경고", "계좌 잔액을 확인할 수 없습니다. 계좌를 다시 선택해주세요.");
+            showModal(t('transfer.warning'), t('transfer.cannotCheckBalance'));
             return;
         }
         if (trnfAmt > accountBalance) {
-            showModal("경고", "출금 계좌의 잔액이 부족합니다.");
+            showModal(t('transfer.warning'), t('transfer.insufficientBalance'));
             return;
         }
         if (transferLimit) {
             if (trnfAmt > transferLimit.oneTmTrnfLmt) {
                 showModal(
-                    "경고",
-                    `1회 이체 한도를 초과했습니다. 최대 ${transferLimit.oneTmTrnfLmt.toLocaleString()} 원까지 가능합니다.`
+                    t('transfer.warning'),
+                    t('transfer.oneTimeTransferLimitExceeded').replace('{limit}', transferLimit.oneTmTrnfLmt.toLocaleString())
                 );
                 return;
             }
             if (trnfAmt > transferLimit.oneDyTrnfLmt) {
                 showModal(
-                    "경고",
-                    `1일 이체 한도를 초과했습니다. 최대 ${transferLimit.oneDyTrnfLmt.toLocaleString()} 원까지 가능합니다.`
+                    t('transfer.warning'),
+                    t('transfer.dailyTransferLimitExceeded').replace('{limit}', transferLimit.oneDyTrnfLmt.toLocaleString())
                 );
                 return;
             }
@@ -227,7 +229,7 @@ export default function BtobTransfer() {
             if (!response.ok) {
                 const errorData = await response.json();
                 throw new Error(
-                    errorData.error || "이체 처리 중 오류가 발생했습니다."
+                    errorData.error || t('transfer.transferProcessingError')
                 );
             }
 
@@ -235,8 +237,8 @@ export default function BtobTransfer() {
                 // 타행 이체는 배치 처리되므로 즉시 잔액 변화가 없을 수 있음
                 // 이체 요청이 성공적으로 접수되었음을 알림
                 showModal(
-                    "이체 완료",
-                    `✅ 이체 완료! ${trnfAmt.toLocaleString()} 원`
+                    t('transfer.transferComplete'),
+                    `✅ ${t('transfer.completed')} ${trnfAmt.toLocaleString()} ${t('common.currency')}`
                 );
                 
                 // 잔액 정보 업데이트 (참고용)
@@ -252,15 +254,15 @@ export default function BtobTransfer() {
                     setAccountBalance(balanceData);
                 }
             } else {
-                showModal("이체 요청 완료", `✅ 이체 요청 완료! ${trnfAmt.toLocaleString()} 원`);
+                showModal(t('transfer.transferRequestComplete'), `✅ ${t('transfer.transferRequestComplete')}! ${trnfAmt.toLocaleString()} ${t('common.currency')}`);
             }
             setTrnfAmt(0);
         } catch (error: unknown) {
             setError("");
             if (error instanceof Error) {
-                showModal("이체 오류", error.message);
+                showModal(t('transfer.transferError'), error.message);
             } else {
-                showModal("이체 오류", "이체 중 오류가 발생했습니다.");
+                showModal(t('transfer.transferError'), t('transfer.transferFailed'));
             }
         } finally {
             setIsLoading(false);
@@ -273,10 +275,10 @@ export default function BtobTransfer() {
                 {/* 페이지 타이틀 */}
                 <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-8">
                     <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">
-                        타행 이체
+                        {t('transfer.external')}
                     </h2>
                     <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                        계좌를 선택하고 이체할 금액을 입력하세요.
+                        {t('transfer.externalTransferDesc')}
                     </p>
                 </div>
 
@@ -296,7 +298,7 @@ export default function BtobTransfer() {
                                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                                 </svg>
-                                <span className="text-gray-600 dark:text-gray-400">계좌 정보를 불러오는 중...</span>
+                                <span className="text-gray-600 dark:text-gray-400">{t('transfer.loadingAccountInfo')}</span>
                             </div>
                         </div>
                     </div>
@@ -312,7 +314,7 @@ export default function BtobTransfer() {
                                 htmlFor="fromAccount"
                                 className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
                             >
-                                출금 계좌
+                                {t('transfer.fromAccount')}
                             </label>
                             <select
                                 id="fromAccount"
@@ -320,7 +322,7 @@ export default function BtobTransfer() {
                                 onChange={(e) => handleSelectAccount(e.target.value)}
                                 className="w-full px-4 py-2.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
                             >
-                                <option value="">출금 계좌를 선택하세요</option>
+                                <option value="">{t('transfer.selectFromAccount')}</option>
                                 {accountList.map((account) => (
                                     <option key={account.acntNo} value={account.acntNo}>
                                         {account.acntNm} ({account.acntNo})
@@ -329,19 +331,19 @@ export default function BtobTransfer() {
                             </select>
                             {accountBalance !== null && (
                                 <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-                                    현재 잔액:{" "}
+                                    {t('transfer.currentBalance')}{" "}
                                     <span className="font-medium text-gray-900 dark:text-white">
-                                        {accountBalance.toLocaleString()} 원
+                                        {accountBalance.toLocaleString()} {t('common.currency')}
                                     </span>
                                 </p>
                             )}
                             {transferLimit && (
                                 <div className="mt-2 space-y-1">
                                     <p className="text-xs text-gray-400 dark:text-gray-500">
-                                        1회 이체 한도: {transferLimit.oneTmTrnfLmt.toLocaleString()} 원
+                                        {t('transfer.oneTimeTransferLimit')} {transferLimit.oneTmTrnfLmt.toLocaleString()} {t('common.currency')}
                                     </p>
                                     <p className="text-xs text-gray-400 dark:text-gray-500">
-                                        1일 이체 한도: {transferLimit.oneDyTrnfLmt.toLocaleString()} 원
+                                        {t('transfer.dailyTransferLimit')} {transferLimit.oneDyTrnfLmt.toLocaleString()} {t('common.currency')}
                                     </p>
                                 </div>
                             )}
@@ -353,14 +355,14 @@ export default function BtobTransfer() {
                                 htmlFor="toAccount"
                                 className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
                             >
-                                입금 계좌번호
+                                {t('transfer.toAccountNumber')}
                             </label>
                             <input
                                 id="toAccount"
                                 type="text"
                                 value={dpstAcntNo}
                                 onChange={(e) => setDpstAcntNo(e.target.value)}
-                                placeholder="타행 이체는 시뮬레이션으로 아무 숫자나 입력하세요"
+                                placeholder={t('transfer.externalTransferSimulation')}
                                 className="w-full px-4 py-2.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
                             />
                         </div>
@@ -371,7 +373,7 @@ export default function BtobTransfer() {
                                 htmlFor="amount"
                                 className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
                             >
-                                이체 금액
+                                {t('transfer.transferAmount')}
                             </label>
                             <div className="relative">
                                 <input
@@ -382,11 +384,11 @@ export default function BtobTransfer() {
                                         const numericValue = e.target.value.replace(/\D/g, "");
                                         setTrnfAmt(Number(numericValue));
                                     }}
-                                    placeholder="이체 금액을 입력하세요"
+                                    placeholder={t('transfer.enterTransferAmount')}
                                     className="w-full px-4 py-2.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
                                 />
                                 <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                                    <span className="text-gray-500 dark:text-gray-400 text-sm">원</span>
+                                    <span className="text-gray-500 dark:text-gray-400 text-sm">{t('common.currency')}</span>
                                 </div>
                             </div>
                         </div>
@@ -397,14 +399,14 @@ export default function BtobTransfer() {
                                 htmlFor="sendMemo"
                                 className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
                             >
-                                내 통장 메모
+                                {t('transfer.myAccountMemo')}
                             </label>
                             <input
                                 id="sendMemo"
                                 type="text"
                                 value={sndMm}
                                 onChange={(e) => setSndMm(e.target.value)}
-                                placeholder="메모 입력 (선택)"
+                                placeholder={t('transfer.memoOptional')}
                                 className="w-full px-4 py-2.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
                             />
                         </div>
@@ -415,14 +417,14 @@ export default function BtobTransfer() {
                                 htmlFor="receiveMemo"
                                 className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
                             >
-                                받는 통장 메모
+                                {t('transfer.recipientAccountMemo')}
                             </label>
                             <input
                                 id="receiveMemo"
                                 type="text"
                                 value={rcvMm}
                                 onChange={(e) => setRcvMm(e.target.value)}
-                                placeholder="받는 사람에게 표시될 메모 입력 (선택)"
+                                placeholder={t('transfer.recipientMemoOptional')}
                                 className="w-full px-4 py-2.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
                             />
                         </div>
@@ -440,9 +442,9 @@ export default function BtobTransfer() {
                                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                                         </svg>
-                                        이체 중...
+                                        {t('transfer.transferring')}
                                     </span>
-                                ) : '이체 실행'}
+                                ) : t('transfer.executeTransfer')}
                             </button>
                             <button
                                 onClick={() => handleTransfer(2)}
@@ -455,9 +457,9 @@ export default function BtobTransfer() {
                                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                                         </svg>
-                                        이체 중...
+                                        {t('transfer.transferring')}
                                     </span>
-                                ) : '이체 실패'}
+                                ) : t('transfer.transferFailure')}
                             </button>
                         </div>
                     </div>
@@ -486,7 +488,7 @@ export default function BtobTransfer() {
                                 onClick={() => setModalOpen(false)}
                                 className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm transition-colors duration-200"
                             >
-                                확인
+                                {t('common.confirm')}
                             </button>
                         </div>
                     </Dialog.Panel>

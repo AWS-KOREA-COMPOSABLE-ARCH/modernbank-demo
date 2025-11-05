@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
-import { useSelector } from "react-redux";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { RootState } from "@/store/store";
-import { Dialog, DialogPanel, DialogTitle } from "@headlessui/react";
 import { Product } from "@/types/api";
+import { Dialog, DialogPanel, DialogTitle } from "@headlessui/react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useSelector } from "react-redux";
 
 interface FormData {
   acntNo: string;
@@ -21,20 +22,21 @@ interface ErrorDetails {
 
 export default function CreateAccount() {
   const { user } = useSelector((state: RootState) => state.auth);
+  const { t } = useLanguage();
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState<FormData>({
     acntNo: "",
     cstmId: user?.user_id || "",
     cstmNm: "",
-    acntNm: "기본상품",
+    acntNm: "Default Product",
     acntBlnc: 0,
   });
 
   // 기본 상품 옵션
   const defaultProducts = useMemo(() => [
-    { id: '1', name: "보통예금통장" },
-    { id: '2', name: "보통적금통장" },
-  ], []);
+    { id: '1', name: t('product.type.checking') },
+    { id: '2', name: t('product.type.savings') },
+  ], [t]);
 
   const [productOptions, setProductOptions] = useState<Product[]>(defaultProducts);
   const [productServiceStatus, setProductServiceStatus] = useState<"UP" | "DOWN">("DOWN");
@@ -74,7 +76,7 @@ export default function CreateAccount() {
           });
           
           if (!response.ok) {
-            throw new Error("사용자 이름을 가져오는데 실패했습니다.");
+            throw new Error(t('account.fetchUsernameFailed'));
           }
           
           const data = await response.json();
@@ -85,7 +87,7 @@ export default function CreateAccount() {
         } catch (error) {
           console.error('Error fetching username:', error);
           if (error instanceof Error) {
-            showModal("오류", "사용자 이름을 가져오는데 실패했습니다.");
+            showModal(t('common.error'), t('account.fetchUsernameFailed'));
           }
         }
       };
@@ -195,7 +197,7 @@ export default function CreateAccount() {
     setIsLoading(true);
 
     if (!user?.user_id) {
-      showModal("오류", "사용자 인증이 필요합니다.");
+      showModal(t('common.error'), t('account.authRequired'));
       setIsLoading(false);
       return;
     }
@@ -225,11 +227,11 @@ export default function CreateAccount() {
           const errorMessages = errorData.details.map(err => err.message).join('\n');
           throw new Error(errorMessages);
         }
-        throw new Error(errorData.error || "계좌 생성에 실패했습니다.");
+        throw new Error(errorData.error || t('account.creationFailed'));
       }
 
       await response.json();
-      showModal("성공", "계좌가 성공적으로 생성되었습니다.");
+      showModal(t('common.success'), t('account.creationSuccess'));
 
       // 성공 후 폼 초기화
       setFormData({
@@ -240,8 +242,8 @@ export default function CreateAccount() {
         acntBlnc: 0,
       });
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : "계좌 생성 중 오류가 발생했습니다.";
-      showModal("오류", errorMessage);
+      const errorMessage = error instanceof Error ? error.message : t('errors.customerCreateUpdateError');
+      showModal(t('common.error'), errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -253,10 +255,10 @@ export default function CreateAccount() {
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
         <div className="p-6">
           <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">
-            계좌 개설
+            {t('account.creation')}
           </h2>
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            새로운 계좌를 개설하기 위한 정보를 입력해주세요.
+            {t('account.creationDesc')}
           </p>
           
           {/* 상품 서비스 상태 표시 및 확인 버튼 */}
@@ -273,25 +275,25 @@ export default function CreateAccount() {
                   productServiceStatus === "UP" ? 'bg-green-500' : 'bg-gray-500'
                 }`}
               ></span>
-              {productServiceStatus === "UP" ? '상품 서비스 활성화' : '기본 상품 사용 중'}
+              {productServiceStatus === "UP" ? t('account.productServiceActive') : t('account.defaultProductUsing')}
             </span>
             <button
               onClick={handleCheckServiceStatus}
               className="px-2 py-1 text-xs font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
             >
-              상태 확인
+              {t('account.checkStatus')}
             </button>
           </div>
 
           <form onSubmit={handleSubmit} className="mt-6">
             <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-6 mb-6">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                기본 정보
+                {t('account.basicInfo')}
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label htmlFor="acntNm" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    상품 선택
+                    {t('account.productSelection')}
                   </label>
                   <div className="relative">
                     <select
@@ -317,7 +319,7 @@ export default function CreateAccount() {
 
                 <div>
                   <label htmlFor="acntNo" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    계좌번호
+                    {t('account.number')}
                   </label>
                   <input
                     id="acntNo"
@@ -331,7 +333,7 @@ export default function CreateAccount() {
 
                 <div>
                   <label htmlFor="cstmId" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    고객 ID
+                    {t('account.customerId')}
                   </label>
                   <input
                     id="cstmId"
@@ -345,7 +347,7 @@ export default function CreateAccount() {
 
                 <div>
                   <label htmlFor="cstmNm" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    고객명
+                    {t('account.customerName')}
                   </label>
                   <input
                     id="cstmNm"
@@ -362,11 +364,11 @@ export default function CreateAccount() {
 
             <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-6 mb-6">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                입금 정보
+                {t('account.depositInfo')}
               </h3>
               <div>
                 <label htmlFor="acntBlnc" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  초기 입금액
+                  {t('account.initialDeposit')}
                 </label>
                 <div className="relative">
                   <input
@@ -378,14 +380,14 @@ export default function CreateAccount() {
                     value={formData.acntBlnc === 0 ? "" : formData.acntBlnc}
                     onChange={handleChange}
                     className="w-full px-4 py-2.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 pr-12 text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                    placeholder="입금액을 입력하세요"
+                    placeholder={t('account.enterAmount')}
                   />
                   <div className="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none">
-                    <span className="text-gray-500 dark:text-gray-400">원</span>
+                    <span className="text-gray-500 dark:text-gray-400">{t('common.currency')}</span>
                   </div>
                 </div>
                 <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                  * 초기 입금액은 0원 이상이어야 합니다.
+                  {t('account.minimumAmount')}
                 </p>
               </div>
             </div>
@@ -402,9 +404,9 @@ export default function CreateAccount() {
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                     </svg>
-                    처리중...
+                    {t('common.loading')}
                   </span>
-                ) : '계좌 개설'}
+                ) : t('account.creation')}
               </button>
             </div>
           </form>
@@ -428,7 +430,7 @@ export default function CreateAccount() {
                 onClick={() => setModalOpen(false)}
                 className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
               >
-                확인
+                {t('common.confirm')}
               </button>
             </div>
           </DialogPanel>

@@ -1,6 +1,7 @@
 package com.modernbank.account.service;
 
 import java.util.List;
+import java.util.Locale;
 
 import com.modernbank.account.domain.entity.Account;
 import com.modernbank.account.domain.entity.TransactionHistory;
@@ -14,6 +15,8 @@ import com.modernbank.account.rest.customer.entity.Customer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,12 +33,16 @@ public class AccountService {
     @Autowired private AccountRepository accountRepository;
     @Autowired private AccountProducer accountProducer;
     @Autowired private CustomerComposite customerComposite;
+    @Autowired private MessageSource messageSource;
 
     public Account retrieveAccount(String acntNo) throws Exception {
         Account account = accountRepository.selectAccount(Account.ofAcntNo(acntNo));
 
-        if (account == null)
-            throw new BusinessException("Account number does not exist.");
+        if (account == null) {
+            Locale locale = LocaleContextHolder.getLocale();
+            String message = messageSource.getMessage("account.not.found", null, locale);
+            throw new BusinessException(message);
+        }
 
         return account;
     }
@@ -54,8 +61,11 @@ public class AccountService {
         int result = 0;
 
         // 1) Verify account number duplication
-        if(existsAccountNumber(account.getAcntNo()))
-            throw new BusinessException("Account number already exists.");
+        if(existsAccountNumber(account.getAcntNo())) {
+            Locale locale = LocaleContextHolder.getLocale();
+            String message = messageSource.getMessage("account.already.exists", null, locale);
+            throw new BusinessException(message);
+        }
 
         // 2) Retrieve customer information (to store 'customer name' in the account table)
         Customer customer = retrieveCustomerWithResilience(account.getCstmId());
@@ -86,9 +96,11 @@ public class AccountService {
 
     private Customer fallbackRetrieveCustomer(String cstmId, Exception e) {
         logger.error("Failed to retrieve customer information. Using fallback for customer ID: " + cstmId, e);
+        Locale locale = LocaleContextHolder.getLocale();
+        String unknownCustomerName = messageSource.getMessage("customer.unknown", null, locale);
         return Customer.builder()
                 .cstmId(cstmId)
-                .cstmNm("Unknown Customer")
+                .cstmNm(unknownCustomerName)
                 .build();
     }
 
@@ -158,8 +170,11 @@ public class AccountService {
         Long acntBlnc = retrieveAccountBalance(acntNo);
 
         // 2) Check if withdrawal is possible
-        if (acntBlnc < trnsAmt)
-            throw new BusinessException("Insufficient account balance.");
+        if (acntBlnc < trnsAmt) {
+            Locale locale = LocaleContextHolder.getLocale();
+            String message = messageSource.getMessage("account.insufficient.balance", null, locale);
+            throw new BusinessException(message);
+        }
         // 3) Create withdrawal transaction history
         transactionHistory.setAcntBlnc(acntBlnc - trnsAmt);
 

@@ -1,5 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server';
 import apiClient from '@/utils/apiClient';
+import { getApiMessage } from '@/utils/apiI18n';
+import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(request: NextRequest) {
   try {
@@ -8,7 +9,7 @@ export async function POST(request: NextRequest) {
 
     if (!user_id || !username || !password) {
       return NextResponse.json(
-        { error: '모든 필드를 입력해주세요.' },
+        { error: getApiMessage(request, 'api.allFieldsRequired') },
         { status: 400 }
       );
     }
@@ -21,7 +22,7 @@ export async function POST(request: NextRequest) {
 
     if (!response?.data) {
       return NextResponse.json(
-        { error: '회원가입에 실패했습니다.' },
+        { error: getApiMessage(request, 'api.signupFailed') },
         { status: 400 }
       );
     }
@@ -30,7 +31,7 @@ export async function POST(request: NextRequest) {
 
   } catch (error: unknown) {
     console.error('[Signup API] Error:', error);
-    const errorMessage = error instanceof Error ? error.message : '서버 오류가 발생했습니다.';
+    const errorMessage = error instanceof Error ? error.message : getApiMessage(request, 'api.serverError');
     return NextResponse.json(
       { error: errorMessage },
       { status: 500 }

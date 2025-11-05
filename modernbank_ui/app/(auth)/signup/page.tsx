@@ -1,12 +1,17 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { Dialog, DialogPanel, DialogTitle } from "@headlessui/react";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 
 export default function SignUp() {
   const router = useRouter();
+  const { t } = useLanguage();
   const [mounted, setMounted] = useState(false);
+  
+  // 디버깅: t 함수가 제대로 작동하는지 확인
+  console.log('t function test:', t('auth.signup'));
   const [formData, setFormData] = useState({
     user_id: "",
     password: "",
@@ -42,12 +47,13 @@ export default function SignUp() {
     setError("");
 
     if (formData.password !== formData.confirmPassword) {
-      showModal("오류", "비밀번호가 일치하지 않습니다.");
+      showModal(t('common.error'), t('auth.passwordMismatch'));
       setIsLoading(false);
       return;
     }
 
     try {
+      console.log('Starting signup request...'); // 디버깅 로그 추가
       const response = await fetch("/api/auth/signup", {
         method: "POST",
         headers: {
@@ -62,16 +68,16 @@ export default function SignUp() {
 
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.error || "회원가입에 실패했습니다.");
+        throw new Error(data.error || t('auth.signupFailed'));
       }
 
-      showModal("성공", "회원가입이 완료되었습니다. 로그인 페이지로 이동합니다.");
+      showModal(t('common.success'), t('auth.signupSuccess'));
       setTimeout(() => {
         router.push("/signin");
       }, 2000);
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : "회원가입 중 오류가 발생했습니다.";
-      showModal("오류", errorMessage);
+      const errorMessage = error instanceof Error ? error.message : t('auth.signupError');
+      showModal(t('common.error'), errorMessage);
       setError(errorMessage);
     } finally {
       setIsLoading(false);
@@ -85,10 +91,10 @@ export default function SignUp() {
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-8">
             <div className="text-center">
               <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">
-                회원가입
+                {t('auth.signup')}
               </h2>
               <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                새로운 계정을 만들어 서비스를 이용하세요.
+                {t('auth.signupDesc')}
               </p>
             </div>
 
@@ -105,7 +111,7 @@ export default function SignUp() {
                     htmlFor="user_id"
                     className="block text-sm font-medium text-gray-700 dark:text-gray-300"
                   >
-                    아이디
+                    {t('auth.userId')}
                   </label>
                   <input
                     id="user_id"
@@ -115,7 +121,7 @@ export default function SignUp() {
                     value={formData.user_id}
                     onChange={handleChange}
                     className="mt-1 block w-full px-4 py-2.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
-                    placeholder="아이디를 입력하세요"
+                    placeholder={t('auth.userIdPlaceholder')}
                     tabIndex={0}
                   />
                 </div>
@@ -125,7 +131,7 @@ export default function SignUp() {
                     htmlFor="name"
                     className="block text-sm font-medium text-gray-700 dark:text-gray-300"
                   >
-                    이름
+                    {t('auth.name')}
                   </label>
                   <input
                     id="name"
@@ -135,7 +141,7 @@ export default function SignUp() {
                     value={formData.name}
                     onChange={handleChange}
                     className="mt-1 block w-full px-4 py-2.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
-                    placeholder="이름을 입력하세요"
+                    placeholder={t('auth.namePlaceholder')}
                     tabIndex={0}
                   />
                 </div>
@@ -145,7 +151,7 @@ export default function SignUp() {
                     htmlFor="password"
                     className="block text-sm font-medium text-gray-700 dark:text-gray-300"
                   >
-                    비밀번호
+                    {t('auth.password')}
                   </label>
                   <input
                     id="password"
@@ -155,7 +161,7 @@ export default function SignUp() {
                     value={formData.password}
                     onChange={handleChange}
                     className="mt-1 block w-full px-4 py-2.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
-                    placeholder="비밀번호를 입력하세요"
+                    placeholder={t('auth.passwordPlaceholder')}
                     tabIndex={0}
                   />
                 </div>
@@ -165,7 +171,7 @@ export default function SignUp() {
                     htmlFor="confirmPassword"
                     className="block text-sm font-medium text-gray-700 dark:text-gray-300"
                   >
-                    비밀번호 확인
+                    {t('auth.confirmPassword')}
                   </label>
                   <input
                     id="confirmPassword"
@@ -175,7 +181,7 @@ export default function SignUp() {
                     value={formData.confirmPassword}
                     onChange={handleChange}
                     className="mt-1 block w-full px-4 py-2.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
-                    placeholder="비밀번호를 다시 입력하세요"
+                    placeholder={t('auth.confirmPasswordPlaceholder')}
                     tabIndex={0}
                   />
                 </div>
@@ -193,10 +199,10 @@ export default function SignUp() {
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                       </svg>
-                      처리 중...
+                      {t('auth.signingUp')}
                     </span>
                   ) : (
-                    "회원가입"
+                    t('auth.signup')
                   )}
                 </button>
               </div>
@@ -227,7 +233,7 @@ export default function SignUp() {
                   onClick={() => setModalOpen(false)}
                   className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm transition-colors duration-200"
                 >
-                  확인
+                  {t('common.confirm')}
                 </button>
               </div>
             </DialogPanel>

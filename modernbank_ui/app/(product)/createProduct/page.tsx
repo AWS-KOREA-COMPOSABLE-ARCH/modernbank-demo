@@ -1,8 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { RootState } from "@/store/store";
 import { Dialog, DialogBackdrop, DialogPanel, DialogTitle } from "@headlessui/react";
 import { CheckIcon } from "@heroicons/react/24/outline";
+import { useState } from "react";
+import { useSelector } from "react-redux";
 
 interface ProductFormData {
   id: string;
@@ -13,6 +16,8 @@ interface ProductFormData {
 }
 
 export default function AddProduct() {
+  const { t } = useLanguage();
+  const { user } = useSelector((state: RootState) => state.auth);
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState<ProductFormData>({
     id: "",
@@ -47,7 +52,7 @@ export default function AddProduct() {
       formData.interestRate < 0 ||
       !formData.currency
     ) {
-      showModal("경고", "모든 필드를 올바르게 입력해주세요.");
+      showModal(t('product.warning'), t('product.validateAllFields'));
       return false;
     }
     return true;
@@ -59,21 +64,29 @@ export default function AddProduct() {
 
     setIsLoading(true);
     try {
+      console.log('Sending product data:', formData);
+      
       const response = await fetch("/api/product", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "x-user-id": user?.user_id || "",
         },
         body: JSON.stringify(formData),
       });
 
+      console.log('Response status:', response.status);
+      console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+
       const data = await response.json();
+      console.log('Response data:', data);
 
       if (!response.ok) {
-        throw new Error(data.message || "상품 추가에 실패했습니다.");
+        console.error('API Error - Status:', response.status, 'Data:', data);
+        throw new Error(data.message || t('product.addFailed'));
       }
 
-      showModal("알림", data.message || "상품이 성공적으로 추가되었습니다.");
+      showModal(t('product.notification'), data.message || t('product.addSuccess'));
       // 폼 초기화
       setFormData({
         id: "",
@@ -83,10 +96,10 @@ export default function AddProduct() {
         currency: "",
       });
     } catch (error: unknown) {
-      console.error("상품 추가 오류:", error);
+      console.error(t('product.addError'), error);
       showModal(
-        "오류",
-        error instanceof Error ? error.message : "상품 추가 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요."
+        t('common.error'),
+        error instanceof Error ? error.message : t('product.addErrorMessage')
       );
     } finally {
       setIsLoading(false);
@@ -110,10 +123,10 @@ export default function AddProduct() {
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
         <div className="p-6">
           <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">
-            상품 추가
+            {t('product.add')}
           </h2>
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            상품 정보를 입력하고 등록 버튼을 클릭하세요.
+            {t('product.addDesc')}
           </p>
         </div>
       </div>
@@ -122,7 +135,7 @@ export default function AddProduct() {
       <div className="mt-8 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
         <div className="p-6">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-            상품 정보 입력
+            {t('product.productInfoInput')}
           </h3>
           
           <form onSubmit={handleSubmit}>
@@ -130,7 +143,7 @@ export default function AddProduct() {
               {/* 상품 ID */}
               <div>
                 <label htmlFor="id" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  상품 ID
+                  {t('product.productId')}
                 </label>
                 <input
                   id="id"
@@ -138,7 +151,7 @@ export default function AddProduct() {
                   type="text"
                   value={formData.id}
                   onChange={handleChange}
-                  placeholder="상품 ID"
+                  placeholder={t('product.productIdPlaceholder')}
                   className="w-full px-4 py-2.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
                 />
               </div>
@@ -146,7 +159,7 @@ export default function AddProduct() {
               {/* 상품명 */}
               <div>
                 <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  상품명
+                  {t('product.productName')}
                 </label>
                 <input
                   id="name"
@@ -154,7 +167,7 @@ export default function AddProduct() {
                   type="text"
                   value={formData.name}
                   onChange={handleChange}
-                  placeholder="상품명을 입력하세요"
+                  placeholder={t('product.productNamePlaceholder')}
                   className="w-full px-4 py-2.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
                 />
               </div>
@@ -162,14 +175,14 @@ export default function AddProduct() {
               {/* 상품 설명 */}
               <div className="md:col-span-2">
                 <label htmlFor="description" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  상품 설명
+                  {t('product.productDescription')}
                 </label>
                 <textarea
                   id="description"
                   name="description"
                   value={formData.description}
                   onChange={handleChange}
-                  placeholder="상품 설명을 입력하세요"
+                  placeholder={t('product.productDescriptionPlaceholder')}
                   className="w-full px-4 py-2.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
                   rows={4}
                 ></textarea>
@@ -178,7 +191,7 @@ export default function AddProduct() {
               {/* 이자율 */}
               <div>
                 <label htmlFor="interestRate" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  이자율 (%)
+                  {t('product.interestRate')}
                 </label>
                 <input
                   id="interestRate"
@@ -186,7 +199,7 @@ export default function AddProduct() {
                   type="number"
                   value={formData.interestRate}
                   onChange={handleChange}
-                  placeholder="이자율"
+                  placeholder={t('product.interestRatePlaceholder')}
                   className="w-full px-4 py-2.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
                 />
               </div>
@@ -194,7 +207,7 @@ export default function AddProduct() {
               {/* 통화 */}
               <div>
                 <label htmlFor="currency" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  통화
+                  {t('product.currency')}
                 </label>
                 <input
                   id="currency"
@@ -202,7 +215,7 @@ export default function AddProduct() {
                   type="text"
                   value={formData.currency}
                   onChange={handleChange}
-                  placeholder="예: KRW, USD"
+                  placeholder={t('product.currencyPlaceholder')}
                   className="w-full px-4 py-2.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
                 />
               </div>
@@ -220,16 +233,16 @@ export default function AddProduct() {
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                     </svg>
-                    처리중...
+                    {t('product.processing')}
                   </span>
-                ) : "등록하기"}
+                ) : t('product.register')}
               </button>
               <button
                 type="button"
                 onClick={handleClear}
                 className="px-6 py-2.5 text-sm font-medium text-red-600 border border-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors duration-200"
               >
-                초기화
+                {t('product.reset')}
               </button>
             </div>
           </form>
@@ -270,7 +283,7 @@ export default function AddProduct() {
                   onClick={() => setModalOpen(false)}
                   className="inline-flex w-full justify-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
                 >
-                  확인
+                  {t('common.confirm')}
                 </button>
               </div>
             </DialogPanel>

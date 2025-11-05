@@ -6,7 +6,8 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "i18n:add": "node scripts/add-i18n-support.js"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.0",

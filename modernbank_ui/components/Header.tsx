@@ -1,15 +1,16 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useDispatch, useSelector } from "react-redux";
-import { RootState } from "@/store/store";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { clearUser } from "@/store/slices/authSlice";
-import { useRouter } from "next/navigation";
-import { DarkModeToggle } from "./DarkModeToggle";
+import { RootState } from "@/store/store";
 import { Disclosure } from '@headlessui/react';
 import { ChevronDownIcon } from '@heroicons/react/24/outline';
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { DarkModeToggle } from "./DarkModeToggle";
+import LanguageToggle from "./LanguageToggle";
 
 interface SubMenuItem {
   name: string;
@@ -34,6 +35,7 @@ interface HealthStatus {
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const { t } = useLanguage();
   const [isScrolled, setIsScrolled] = useState(false);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [productServiceStatus, setProductServiceStatus] = useState<HealthStatus | null>(null);
@@ -194,83 +196,83 @@ export default function Header() {
       ? hasCustomer
         ? [
             {
-              name: "고객 관리",
+              name: t('nav.customerManagement'),
               subMenu: [
                 {
-                  name: "고객 조회",
+                  name: t('nav.customerInquiry'),
                   href: "/retrieveCustomer",
-                  description: "고객 정보를 조회합니다.",
+                  description: t('nav.customerInquiryDesc'),
                 },
               ],
             },
             {
-              name: "계좌 관리",
+              name: t('nav.accountManagement'),
               subMenu: [
                 {
-                  name: "계좌 개설",
+                  name: t('nav.accountCreation'),
                   href: "/createAccount",
-                  description: "새로운 계좌를 개설하세요.",
+                  description: t('nav.accountCreationDesc'),
                 },
                 {
-                  name: "입금",
+                  name: t('nav.deposit'),
                   href: "/deposit",
-                  description: "계좌에 금액을 입금합니다.",
+                  description: t('nav.depositDesc'),
                 },
                 {
-                  name: "출금",
+                  name: t('nav.withdrawal'),
                   href: "/withdraw",
-                  description: "계좌에서 금액을 출금합니다.",
+                  description: t('nav.withdrawalDesc'),
                 },
                 {
-                  name: "입출금 이력 조회",
+                  name: t('nav.transactionHistory'),
                   href: "/retrieveTransactionHistory",
-                  description: "입출금 내역을 확인하세요.",
+                  description: t('nav.transactionHistoryDesc'),
                 },
               ],
             },
             {
-              name: "계좌 이체",
+              name: t('nav.accountTransfer'),
               subMenu: [
                 {
-                  name: "당행 이체",
+                  name: t('nav.internalTransfer'),
                   href: "/transfer",
-                  description: "같은 은행 계좌로 이체합니다.",
+                  description: t('nav.internalTransferDesc'),
                 },
                 {
-                  name: "타행 이체",
+                  name: t('nav.externalTransfer'),
                   href: "/btobTransfer",
-                  description: "다른 은행 계좌로 이체합니다.",
+                  description: t('nav.externalTransferDesc'),
                 },
                 {
-                  name: "이체 이력 조회",
+                  name: t('nav.transferHistory'),
                   href: "/retrieveTransferHistory",
-                  description: "이체 내역을 확인하세요.",
+                  description: t('nav.transferHistoryDesc'),
                 },
               ],
             },
             // 상품 서비스가 활성화된 경우에만 상품 메뉴 추가
             ...(isProductServiceActive ? [{
-              name: "상품",
+              name: t('nav.product'),
               subMenu: [
                 {
-                  name: "상품 추가",
+                  name: t('nav.productCreate'),
                   href: "/createProduct",
-                  description: "새로운 상품을 추가합니다.",
+                  description: t('nav.productCreateDesc'),
                 },
                 {
-                  name: "상품 조회",
+                  name: t('nav.productInquiry'),
                   href: "/retrieveProduct",
-                  description: "등록된 상품을 조회합니다.",
+                  description: t('nav.productInquiryDesc'),
                 },
               ],
             }] : []),
             {
-              name: "리포트",
+              name: t('nav.report'),
               subMenu: [
                 {
-                  name: "고객조회(CQRS)",
+                  name: t('nav.customerReport'),
                   href: "/customerReport",
-                  description: "CQRS 패턴으로 고객을 조회합니다.",
+                  description: t('nav.customerReportDesc'),
                 },
               ],
             },
@@ -278,12 +280,12 @@ export default function Header() {
         : [
             // 고객이 없는 경우 고객 등록 메뉴만 표시
             {
-              name: "고객 등록",
+              name: t('nav.customerRegistration'),
               subMenu: [
                 {
-                  name: "고객 등록",
+                  name: t('nav.customerRegistration'),
                   href: "/createCustomer",
-                  description: "고객을 등록합니다.",
+                  description: t('nav.customerRegistrationDesc'),
                 },
               ],
             },
@@ -354,8 +356,11 @@ export default function Header() {
               </div>
             )}
 
-            {/* 테마 토글 + 유저 */}
-            <DarkModeToggle />
+            {/* 테마 토글 + 언어 토글 + 유저 */}
+            <div className="flex items-center space-x-2">
+              <LanguageToggle />
+              <DarkModeToggle />
+            </div>
             {isAuthenticated ? (
               <div className="flex items-center space-x-3">
                 <span className="text-sm text-gray-600 dark:text-gray-300">
@@ -365,7 +370,7 @@ export default function Header() {
                   onClick={handleLogout}
                   className="px-4 py-1.5 rounded-full text-sm font-medium bg-red-500 hover:bg-red-600 text-white transition-colors"
                 >
-                  로그아웃
+                  {t('auth.logout')}
                 </button>
               </div>
             ) : (
@@ -373,13 +378,14 @@ export default function Header() {
                 href="/signin"
                 className="px-4 py-1.5 rounded-full text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white transition-colors"
               >
-                로그인
+                {t('auth.signin')}
               </Link>
             )}
           </div>
 
           {/* 모바일 메뉴 버튼 */}
           <div className="md:hidden flex items-center space-x-3">
+            <LanguageToggle />
             <DarkModeToggle />
             <button
               onClick={toggleMenu}
@@ -452,7 +458,7 @@ export default function Header() {
                   onClick={handleLogout}
                   className="w-full px-4 py-2 rounded-full text-sm font-medium bg-red-500 hover:bg-red-600 text-white transition"
                 >
-                  로그아웃
+                  {t('auth.logout')}
                 </button>
               </div>
             ) : (
@@ -461,7 +467,7 @@ export default function Header() {
                 onClick={() => setIsMenuOpen(false)}
                 className="block w-full px-4 py-2 rounded-full text-sm font-medium text-center bg-blue-600 hover:bg-blue-700 text-white transition"
               >
-                로그인
+                {t('auth.signin')}
               </Link>
             )}
           </div>

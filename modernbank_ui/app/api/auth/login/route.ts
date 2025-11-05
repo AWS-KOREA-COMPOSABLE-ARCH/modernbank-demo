@@ -1,5 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server';
 import apiClient from "@/utils/apiClient";
+import { getApiMessage } from "@/utils/apiI18n";
+import { NextRequest, NextResponse } from 'next/server';
 
 interface LoginRequest {
   user_id: string;
@@ -37,7 +38,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<LoginResp
     const { user_id, password } = body;
 
     if (!user_id || !password) {
-      return NextResponse.json({ message: "아이디와 비밀번호를 입력해주세요." }, { status: 400 });
+      return NextResponse.json({ message: getApiMessage(request, "api.userIdPasswordRequired") }, { status: 400 });
     }
 
     const response = await apiClient("AUTH", "/login", "POST", {
@@ -46,7 +47,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<LoginResp
     });
 
     if (!response.data) {
-      return NextResponse.json({ message: "로그인에 실패했습니다." }, { status: 401 });
+      return NextResponse.json({ message: getApiMessage(request, "api.loginFailed") }, { status: 401 });
     }
 
     return NextResponse.json(response.data);
@@ -54,7 +55,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<LoginResp
     console.error("Login error:", error);
     const apiError = error as ApiError;
     const errorMessages = apiError.response?.data?.details?.map((err: ValidationError) => err.message).join('\n');
-    const message = errorMessages || "서버 오류가 발생했습니다.";
+    const message = errorMessages || getApiMessage(request, "api.serverError");
     return NextResponse.json({ message }, { status: apiError.response?.status || 500 });
   }
 } 

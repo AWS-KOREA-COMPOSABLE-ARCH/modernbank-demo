@@ -1,15 +1,17 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { useDispatch } from "react-redux";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { setUser } from "@/store/slices/authSlice";
 import { Dialog, DialogPanel, DialogTitle } from "@headlessui/react";
 import Link from 'next/link';
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useDispatch } from "react-redux";
 
 export default function SignIn() {
   const router = useRouter();
   const dispatch = useDispatch();
+  const { t } = useLanguage();
   const [mounted, setMounted] = useState(false);
   const [formData, setFormData] = useState({
     user_id: "",
@@ -54,12 +56,12 @@ export default function SignIn() {
 
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.error || "로그인에 실패했습니다.");
+        throw new Error(data.error || t('auth.loginFailed'));
       }
 
       const data = await response.json();
       
-      console.log("로그인 응답 데이터:", data);
+      console.log(t('auth.loginResponseData'), data);
       
       // Redux store에 사용자 정보 저장 - user 객체 형태 그대로 유지
       const userData = {
@@ -67,7 +69,7 @@ export default function SignIn() {
         name: formData.user_id // name 또는 cstmNm 필드 사용
       };
       
-      console.log("저장할 사용자 데이터:", userData);
+      console.log(t('auth.savingUserData'), userData);
       
       // Redux 스토어에 저장
       dispatch(setUser(userData));
@@ -78,8 +80,8 @@ export default function SignIn() {
       
       router.push("/");
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : "로그인 중 오류가 발생했습니다.";
-      showModal("오류", errorMessage);
+      const errorMessage = error instanceof Error ? error.message : t('auth.loginError');
+      showModal(t('auth.error'), errorMessage);
       setError(errorMessage);
     } finally {
       setIsLoading(false);
@@ -93,10 +95,10 @@ export default function SignIn() {
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-8">
             <div className="text-center">
               <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">
-                로그인
+                {t('auth.signin')}
               </h2>
               <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                계정에 로그인하여 서비스를 이용하세요.
+                {t('auth.signinDesc')}
               </p>
             </div>
 
@@ -113,7 +115,7 @@ export default function SignIn() {
                     htmlFor="user_id"
                     className="block text-sm font-medium text-gray-700 dark:text-gray-300"
                   >
-                    아이디
+                    {t('auth.userId')}
                   </label>
                   <input
                     id="user_id"
@@ -123,7 +125,7 @@ export default function SignIn() {
                     value={formData.user_id}
                     onChange={handleChange}
                     className="mt-1 block w-full px-4 py-2.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
-                    placeholder="아이디를 입력하세요"
+                    placeholder={t('auth.userIdPlaceholder')}
                   />
                 </div>
 
@@ -132,7 +134,7 @@ export default function SignIn() {
                     htmlFor="password"
                     className="block text-sm font-medium text-gray-700 dark:text-gray-300"
                   >
-                    비밀번호
+                    {t('auth.password')}
                   </label>
                   <input
                     id="password"
@@ -142,7 +144,7 @@ export default function SignIn() {
                     value={formData.password}
                     onChange={handleChange}
                     className="mt-1 block w-full px-4 py-2.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
-                    placeholder="비밀번호를 입력하세요"
+                    placeholder={t('auth.passwordPlaceholder')}
                   />
                 </div>
               </div>
@@ -159,10 +161,10 @@ export default function SignIn() {
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                       </svg>
-                      로그인 중...
+                      {t('auth.signingIn')}
                     </span>
                   ) : (
-                    "로그인"
+                    t('auth.signin')
                   )}
                 </button>
               </div>
@@ -170,12 +172,12 @@ export default function SignIn() {
 
             <div className="mt-4 text-center">
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                계정이 없으신가요?{" "}
+                {t('auth.noAccount')}{" "}
                 <Link 
                   href="/signup"
                   className="text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300"
                 >
-                  회원가입
+                  {t('auth.signup')}
                 </Link>
               </p>
             </div>
@@ -205,7 +207,7 @@ export default function SignIn() {
                   onClick={() => setModalOpen(false)}
                   className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm transition-colors duration-200"
                 >
-                  확인
+                  {t('auth.confirm')}
                 </button>
               </div>
             </DialogPanel>

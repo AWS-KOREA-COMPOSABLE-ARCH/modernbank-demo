@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useSelector } from "react-redux";
-import { Dialog, DialogBackdrop, DialogPanel, DialogTitle } from "@headlessui/react";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { RootState } from "@/store/store";
-import { PencilIcon, TrashIcon, CheckIcon } from "@heroicons/react/24/outline";
+import { Dialog, DialogBackdrop, DialogPanel, DialogTitle } from "@headlessui/react";
+import { CheckIcon, PencilIcon, TrashIcon } from "@heroicons/react/24/outline";
+import { useEffect, useState } from "react";
+import { useSelector } from "react-redux";
 
 interface Product {
   id: string;
@@ -16,6 +17,7 @@ interface Product {
 
 export default function RetrieveProduct() {
   const { user, isAuthenticated } = useSelector((state: RootState) => state.auth);
+  const { t } = useLanguage();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -46,13 +48,13 @@ export default function RetrieveProduct() {
         });
         
         if (!response.ok) {
-          throw new Error("상품 목록을 불러오는 데 실패했습니다.");
+          throw new Error(t('product.loadProductsFailed'));
         }
         
         const data = await response.json();
         setProducts(data);
       } catch (err) {
-        setError(err instanceof Error ? err.message : "알 수 없는 오류가 발생했습니다.");
+        setError(err instanceof Error ? err.message : t('errors.unknownError'));
       } finally {
         setLoading(false);
       }
@@ -90,7 +92,7 @@ export default function RetrieveProduct() {
       
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.error || "상품 수정에 실패했습니다.");
+        throw new Error(data.error || t('product.updateFailed'));
       }
       
       // 수정된 상품으로 목록 업데이트
@@ -99,16 +101,16 @@ export default function RetrieveProduct() {
       ));
       
       setModalContent({
-        title: "수정 완료",
-        message: "상품이 성공적으로 수정되었습니다.",
+        title: t('product.updateComplete'),
+        message: t('product.updateSuccess'),
       });
       setModalOpen(true);
       setEditMode(false);
       setSelectedProduct(null);
     } catch (err) {
       setModalContent({
-        title: "오류",
-        message: err instanceof Error ? err.message : "상품 수정 중 오류가 발생했습니다.",
+        title: t('common.error'),
+        message: err instanceof Error ? err.message : t('product.updateError'),
       });
       setModalOpen(true);
     } finally {
@@ -135,21 +137,21 @@ export default function RetrieveProduct() {
       
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.error || "상품 삭제에 실패했습니다.");
+        throw new Error(data.error || t('product.deleteFailed'));
       }
       
       // 삭제된 상품 제거
       setProducts(products.filter(product => product.id !== productToDelete));
       
       setModalContent({
-        title: "삭제 완료",
-        message: "상품이 성공적으로 삭제되었습니다.",
+        title: t('product.deleteComplete'),
+        message: t('product.deleteSuccess'),
       });
       setModalOpen(true);
     } catch (err) {
       setModalContent({
-        title: "오류",
-        message: err instanceof Error ? err.message : "상품 삭제 중 오류가 발생했습니다.",
+        title: t('common.error'),
+        message: err instanceof Error ? err.message : t('product.deleteError'),
       });
       setModalOpen(true);
     } finally {
@@ -175,9 +177,9 @@ export default function RetrieveProduct() {
       {/* 페이지 헤더 */}
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
         <div className="p-6">
-          <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">상품 조회</h2>
+          <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">{t('product.retrieve')}</h2>
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            등록된 계좌 상품 목록을 조회하고 관리합니다.
+            {t('product.retrieveDesc')}
           </p>
         </div>
       </div>
@@ -186,7 +188,7 @@ export default function RetrieveProduct() {
       <div className="mt-8 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
         <div className="p-6">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-            상품 목록
+            {t('product.productList')}
           </h3>
 
           {loading && (
@@ -203,7 +205,7 @@ export default function RetrieveProduct() {
 
           {!loading && !error && products.length === 0 && (
             <div className="py-8 text-center text-gray-500 dark:text-gray-400">
-              <p>등록된 상품이 없습니다. 상품을 추가해 주세요.</p>
+              <p>{t('product.noProductsMessage')}</p>
             </div>
           )}
 
@@ -212,12 +214,12 @@ export default function RetrieveProduct() {
               <table className="w-full divide-y divide-gray-200 dark:divide-gray-700">
                 <thead className="bg-gray-50 dark:bg-gray-700">
                   <tr>
-                    <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">상품 ID</th>
-                    <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">상품명</th>
-                    <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">설명</th>
-                    <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">이자율</th>
-                    <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">통화</th>
-                    <th scope="col" className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">작업</th>
+                    <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{t('product.productId')}</th>
+                    <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{t('product.productName')}</th>
+                    <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{t('product.description')}</th>
+                    <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{t('product.interestRate')}</th>
+                    <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{t('product.currency')}</th>
+                    <th scope="col" className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{t('product.actions')}</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
@@ -256,7 +258,7 @@ export default function RetrieveProduct() {
         <div className="mt-8 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
           <div className="p-6">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-              상품 수정
+              {t('product.edit')}
             </h3>
             
             <form onSubmit={handleUpdateProduct}>
@@ -264,7 +266,7 @@ export default function RetrieveProduct() {
                 {/* 상품 ID */}
                 <div>
                   <label htmlFor="id" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    상품 ID
+                    {t('product.productId')}
                   </label>
                   <input
                     id="id"
@@ -279,7 +281,7 @@ export default function RetrieveProduct() {
                 {/* 상품명 */}
                 <div>
                   <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    상품명
+                    {t('product.productName')}
                   </label>
                   <input
                     id="name"
@@ -294,7 +296,7 @@ export default function RetrieveProduct() {
                 {/* 상품 설명 */}
                 <div className="md:col-span-2">
                   <label htmlFor="description" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    상품 설명
+                    {t('product.productDescription')}
                   </label>
                   <textarea
                     id="description"
@@ -309,7 +311,7 @@ export default function RetrieveProduct() {
                 {/* 이자율 */}
                 <div>
                   <label htmlFor="interestRate" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    이자율 (%)
+                    {t('product.interestRate')}
                   </label>
                   <input
                     id="interestRate"
@@ -325,7 +327,7 @@ export default function RetrieveProduct() {
                 {/* 통화 */}
                 <div>
                   <label htmlFor="currency" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    통화
+                    {t('product.currency')}
                   </label>
                   <input
                     id="currency"
@@ -350,9 +352,9 @@ export default function RetrieveProduct() {
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                       </svg>
-                      처리중...
+                      {t('product.processing')}
                     </span>
-                  ) : "수정하기"}
+                  ) : t('product.modify')}
                 </button>
                 <button
                   type="button"
@@ -362,7 +364,7 @@ export default function RetrieveProduct() {
                   }}
                   className="px-6 py-2.5 text-sm font-medium text-red-600 border border-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors duration-200"
                 >
-                  취소
+                  {t('product.cancel')}
                 </button>
               </div>
             </form>
@@ -404,7 +406,7 @@ export default function RetrieveProduct() {
                   onClick={() => setModalOpen(false)}
                   className="inline-flex w-full justify-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
                 >
-                  확인
+                  {t('common.confirm')}
                 </button>
               </div>
             </DialogPanel>
@@ -431,11 +433,11 @@ export default function RetrieveProduct() {
                 </div>
                 <div className="mt-3 text-center sm:mt-5">
                   <DialogTitle as="h3" className="text-base font-semibold text-gray-900 dark:text-white">
-                    상품 삭제
+                    {t('product.deleteProduct')}
                   </DialogTitle>
                   <div className="mt-2">
                     <p className="text-sm text-gray-500 dark:text-gray-400">
-                      정말로 이 상품을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.
+                      {t('product.deleteConfirmation')}
                     </p>
                   </div>
                 </div>
@@ -447,14 +449,14 @@ export default function RetrieveProduct() {
                   disabled={loading}
                   className="inline-flex flex-1 justify-center rounded-md bg-red-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-red-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600 disabled:opacity-70 disabled:cursor-not-allowed"
                 >
-                  {loading ? '처리중...' : '삭제'}
+                  {loading ? t('product.processing') : t('product.delete')}
                 </button>
                 <button
                   type="button"
                   onClick={() => setConfirmationModalOpen(false)}
                   className="inline-flex flex-1 justify-center rounded-md bg-gray-200 dark:bg-gray-700 px-3 py-2 text-sm font-semibold text-gray-900 dark:text-white shadow-sm hover:bg-gray-300 dark:hover:bg-gray-600"
                 >
-                  취소
+                  {t('product.cancel')}
                 </button>
               </div>
             </DialogPanel>

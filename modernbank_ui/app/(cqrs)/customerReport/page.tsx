@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useSelector } from "react-redux";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { RootState } from "@/store/store";
 import { Dialog, DialogPanel, DialogTitle } from "@headlessui/react";
+import { useEffect, useState } from "react";
+import { useSelector } from "react-redux";
 
 // ✅ 인터페이스 정의
 interface Account {
@@ -28,6 +29,7 @@ interface CustomerReport {
 }
 
 export default function CustomerReport() {
+  const { t } = useLanguage();
   const { user } = useSelector((state: RootState) => state.auth);
   const [report, setReport] = useState<CustomerReport | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -44,7 +46,7 @@ export default function CustomerReport() {
   useEffect(() => {
     const fetchReport = async () => {
       if (!user?.user_id) {
-        showModal("오류", "사용자 인증이 필요합니다.");
+        showModal(t('common.error'), t('account.authRequired'));
         return;
       }
 
@@ -58,14 +60,14 @@ export default function CustomerReport() {
 
         if (!response.ok) {
           const data = await response.json();
-          throw new Error(data.error || "고객 리포트를 불러올 수 없습니다.");
+          throw new Error(data.error || t('cqrs.customerReportLoadError'));
         }
 
         const data = await response.json();
         setReport(data);
       } catch (error: unknown) {
-        const errorMessage = error instanceof Error ? error.message : "고객 리포트 조회 중 오류가 발생했습니다.";
-        showModal("오류", errorMessage);
+        const errorMessage = error instanceof Error ? error.message : t('cqrs.customerReportError');
+        showModal(t('common.error'), errorMessage);
         setError(errorMessage);
       } finally {
         setIsLoading(false);
@@ -97,7 +99,7 @@ export default function CustomerReport() {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-          <p className="text-gray-900 dark:text-white">❌ 고객 정보를 찾을 수 없습니다.</p>
+          <p className="text-gray-900 dark:text-white">❌ {t('cqrs.customerInfoNotFound')}</p>
         </div>
       </div>
     );
@@ -118,43 +120,43 @@ export default function CustomerReport() {
       {/* 페이지 타이틀 */}
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-8">
         <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">
-          고객 정보
+          {t('cqrs.customerInfo')}
         </h2>
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-          고객의 기본 정보와 계좌 정보를 확인할 수 있습니다.
+          {t('cqrs.customerInfoDesc')}
         </p>
       </div>
 
       {/* 고객 기본 정보 */}
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-8">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-          기본 정보
+          {t('cqrs.basicInfo')}
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <div>
-            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">고객 ID</p>
+            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{t('cqrs.customerId')}</p>
             <p className="mt-1 text-sm text-gray-900 dark:text-white">{report.cstmId}</p>
           </div>
           <div>
-            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">고객명</p>
+            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{t('cqrs.customerName')}</p>
             <p className="mt-1 text-sm text-gray-900 dark:text-white">{report.cstmNm}</p>
           </div>
           <div>
-            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">연락처</p>
+            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{t('cqrs.contact')}</p>
             <p className="mt-1 text-sm text-gray-900 dark:text-white">{report.cstmPn}</p>
           </div>
           <div>
-            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">주소</p>
+            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{t('cqrs.address')}</p>
             <p className="mt-1 text-sm text-gray-900 dark:text-white">{report.cstmAdr}</p>
           </div>
           <div>
-            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">나이</p>
+            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{t('cqrs.age')}</p>
             <p className="mt-1 text-sm text-gray-900 dark:text-white">{report.cstmAge}</p>
           </div>
           <div>
-            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">성별</p>
+            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{t('cqrs.gender')}</p>
             <p className="mt-1 text-sm text-gray-900 dark:text-white">
-              {report.cstmGnd === '1' ? '남성' : '여성'}
+              {report.cstmGnd === '1' ? t('cqrs.male') : t('cqrs.female')}
             </p>
           </div>
         </div>
@@ -163,19 +165,19 @@ export default function CustomerReport() {
       {/* 이체 한도 정보 */}
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-8">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-          이체 한도
+          {t('cqrs.transferLimit')}
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">1회 이체 한도</p>
+            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{t('cqrs.oneTimeTransferLimit')}</p>
             <p className="mt-1 text-sm font-medium text-blue-600 dark:text-blue-400">
-              {report.oneTmTrnfLmt.toLocaleString()} 원
+              {report.oneTmTrnfLmt.toLocaleString()} {t('common.currency')}
             </p>
           </div>
           <div>
-            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">1일 이체 한도</p>
+            <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{t('cqrs.dailyTransferLimit')}</p>
             <p className="mt-1 text-sm font-medium text-blue-600 dark:text-blue-400">
-              {report.oneDyTrnfLmt.toLocaleString()} 원
+              {report.oneDyTrnfLmt.toLocaleString()} {t('common.currency')}
             </p>
           </div>
         </div>
@@ -184,16 +186,16 @@ export default function CustomerReport() {
       {/* 계좌 목록 */}
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-          계좌 목록
+          {t('cqrs.accountList')}
         </h3>
         <div className="overflow-x-auto">
           <table className="w-full border-collapse">
             <thead>
               <tr className="bg-gray-50 dark:bg-gray-700">
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">계좌번호</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">계좌명</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">개설일</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">잔액</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('cqrs.accountNumber')}</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('cqrs.accountName')}</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('cqrs.openDate')}</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('cqrs.balance')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
@@ -203,7 +205,7 @@ export default function CustomerReport() {
                   <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-300">{account.acntNm}</td>
                   <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-300">{formatDate(account.newDtm)}</td>
                   <td className="px-4 py-3 text-sm font-medium text-blue-600 dark:text-blue-400">
-                    {account.acntBlnc.toLocaleString()} 원
+                    {account.acntBlnc.toLocaleString()} {t('common.currency')}
                   </td>
                 </tr>
               ))}
@@ -234,7 +236,7 @@ export default function CustomerReport() {
                 onClick={() => setModalOpen(false)}
                 className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm transition-colors duration-200"
               >
-                확인
+                {t('common.confirm')}
               </button>
             </div>
           </DialogPanel>

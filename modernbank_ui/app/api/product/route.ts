@@ -1,23 +1,26 @@
+import apiClient from "@/utils/apiClient";
+import { getLocaleFromHeader, getMessage } from "@/utils/i18nServer";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import apiClient from "@/utils/apiClient";
 
-// 상품 생성 요청 스키마 정의
-const productSchema = z.object({
-  id: z.string().min(1, "상품 ID는 필수입니다"),
-  name: z.string().min(1, "상품명은 필수입니다"),
-  description: z.string().min(1, "상품 설명은 필수입니다"),
-  interestRate: z.number().min(0, "이자율은 0 이상이어야 합니다"),
-  currency: z.string().min(1, "통화는 필수입니다"),
+// 상품 생성 요청 스키마 정의 (다국어 처리를 위해 동적으로 생성)
+const createProductSchema = (locale: 'ko' | 'en') => z.object({
+  id: z.string().min(1, getMessage(locale, 'validation.product.id.required')),
+  name: z.string().min(1, getMessage(locale, 'validation.product.name.required')),
+  description: z.string().min(1, getMessage(locale, 'validation.product.description.required')),
+  interestRate: z.number().min(0, getMessage(locale, 'validation.product.interestRate.min')),
+  currency: z.string().min(1, getMessage(locale, 'validation.product.currency.required')),
 });
 
 export async function GET(request: NextRequest) {
+  const locale = getLocaleFromHeader(request.headers.get('Accept-Language'));
+  
   try {
     const userId = request.headers.get('x-user-id');
     
     if (!userId) {
       return NextResponse.json(
-        { error: '사용자 정보가 없습니다.' },
+        { error: getMessage(locale, 'common.userInfoRequired') },
         { status: 401 }
       );
     }
@@ -28,7 +31,7 @@ export async function GET(request: NextRequest) {
 
     if (!response?.data) {
       return NextResponse.json(
-        { error: '상품 정보를 찾을 수 없습니다.' },
+        { error: getMessage(locale, 'product.notFound') },
         { status: 404 }
       );
     }
@@ -36,7 +39,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(response.data);
   } catch (error: unknown) {
     console.error('[Product API] Error:', error);
-    const errorMessage = error instanceof Error ? error.message : '서버 오류가 발생했습니다.';
+    const errorMessage = error instanceof Error ? error.message : getMessage(locale, 'common.serverError');
     return NextResponse.json(
       { error: errorMessage },
       { status: 500 }
@@ -45,12 +48,14 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: Request) {
+  const locale = getLocaleFromHeader(request.headers.get('Accept-Language'));
+  
   try {
     const userId = request.headers.get('x-user-id');
     
     if (!userId) {
       return NextResponse.json(
-        { error: '사용자 정보가 없습니다.' },
+        { error: getMessage(locale, 'common.userInfoRequired') },
         { status: 401 }
       );
     }
@@ -58,7 +63,8 @@ export async function POST(request: Request) {
     const body = await request.json();
     console.log("Received request body:", body);
     
-    // 요청 데이터 검증
+    // 요청 데이터 검증 (다국어 스키마 사용)
+    const productSchema = createProductSchema(locale);
     const validatedData = productSchema.parse(body);
     console.log("Validated data:", validatedData);
 
@@ -74,7 +80,7 @@ export async function POST(request: Request) {
     console.log("Received response data:", data);
 
     return NextResponse.json(
-      { message: "상품이 성공적으로 생성되었습니다", data },
+      { message: getMessage(locale, 'product.createSuccess'), data },
       { status: 201 }
     );
   } catch (error) {
@@ -87,15 +93,15 @@ export async function POST(request: Request) {
 
     if (error instanceof z.ZodError) {
       return NextResponse.json(
-        { message: "잘못된 요청 데이터입니다", errors: error.errors },
+        { message: getMessage(locale, 'common.invalidRequestData'), errors: error.errors },
         { status: 400 }
       );
     }
     
-    console.error("상품 생성 중 오류 발생:", error);
+    console.error(getMessage(locale, 'product.createError'), error);
     return NextResponse.json(
       { 
-        message: error instanceof Error ? error.message : "서버 오류가 발생했습니다",
+        message: error instanceof Error ? error.message : getMessage(locale, 'common.serverError'),
         details: error instanceof Error ? error.stack : undefined
       },
       { status: 500 }

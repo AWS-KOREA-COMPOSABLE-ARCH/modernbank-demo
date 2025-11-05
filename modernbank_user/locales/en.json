@@ -1,0 +1,25 @@
+{
+  "auth": {
+    "login_successful": "Login successful",
+    "invalid_credentials": "Invalid credentials",
+    "invalid_request_payload": "Invalid request payload",
+    "internal_server_error": "Internal server error",
+    "failed_to_generate_token": "Failed to generate token",
+    "user_not_found": "User not found",
+    "password_update_failed": "Failed to update password",
+    "password_updated_successfully": "Password updated successfully"
+  },
+  "validation": {
+    "required_field": "This field is required",
+    "invalid_user_id": "Invalid user ID",
+    "invalid_password": "Invalid password format",
+    "password_too_short": "Password is too short",
+    "password_too_long": "Password is too long"
+  },
+  "errors": {
+    "database_error": "Database error occurred",
+    "connection_failed": "Database connection failed",
+    "query_failed": "Database query failed",
+    "transaction_failed": "Transaction failed"
+  }
+}

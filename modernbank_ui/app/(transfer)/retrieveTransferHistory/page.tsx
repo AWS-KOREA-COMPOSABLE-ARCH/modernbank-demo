@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
-import { useSelector } from "react-redux";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { RootState } from "@/store/store";
 import { Dialog, DialogPanel, DialogTitle } from "@headlessui/react";
+import { useState } from "react";
+import { useSelector } from "react-redux";
 
 interface TransferRecord {
   cstmId: string;
@@ -22,6 +23,7 @@ interface TransferRecord {
 
 export default function TransferHistory() {
   const { user } = useSelector((state: RootState) => state.auth);
+  const { t } = useLanguage();
   const [cstmId, setCstmId] = useState<string>(user?.user_id || "");
   const [transferHistory, setTransferHistory] = useState<TransferRecord[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -37,12 +39,12 @@ export default function TransferHistory() {
 
   const handleSearch = async () => {
     if (!cstmId.trim()) {
-      showModal("경고", "고객번호를 입력하세요.");
+      showModal(t('common.warning'), t('transfer.enterCustomerNumber'));
       return;
     }
 
     if (!user?.user_id) {
-      showModal("오류", "사용자 인증이 필요합니다.");
+      showModal(t('common.error'), t('transfer.userAuthRequired'));
       return;
     }
 
@@ -57,17 +59,17 @@ export default function TransferHistory() {
 
       const contentType = response.headers.get('content-type');
       if (!contentType || !contentType.includes('application/json')) {
-        throw new Error('서버 응답이 JSON 형식이 아닙니다.');
+        throw new Error(t('transfer.serverResponseNotJson'));
       }
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "이체 내역을 불러올 수 없습니다.");
+        throw new Error(data.error || t('transfer.transferHistoryLoadError'));
       }
 
       if (!Array.isArray(data)) {
-        throw new Error("이체 내역 데이터 형식이 올바르지 않습니다.");
+        throw new Error(t('transfer.transferHistoryDataFormatError'));
       }
 
       const sortedByLatest = [...data].sort((a: TransferRecord, b: TransferRecord) => {
@@ -78,8 +80,8 @@ export default function TransferHistory() {
       });
       setTransferHistory(sortedByLatest);
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : "이체 내역 조회 중 오류가 발생했습니다.";
-      showModal("오류", errorMessage);
+      const errorMessage = error instanceof Error ? error.message : t('transfer.transferHistoryInquiryError');
+      showModal(t('common.error'), errorMessage);
       setError(errorMessage);
     } finally {
       setIsLoading(false);
@@ -103,10 +105,10 @@ export default function TransferHistory() {
         {/* 페이지 타이틀 */}
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-8">
           <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">
-            이체 이력 조회
+            {t('transfer.transferHistoryInquiry')}
           </h2>
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            고객번호를 입력하여 이체 내역을 조회하세요.
+            {t('transfer.transferHistoryInquiryDesc')}
           </p>
         </div>
 
@@ -125,14 +127,14 @@ export default function TransferHistory() {
                 htmlFor="customerId"
                 className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
               >
-                고객번호
+                {t('transfer.customerNumber')}
               </label>
               <input
                 id="customerId"
                 type="text"
                 value={cstmId}
                 onChange={(e) => setCstmId(e.target.value)}
-                placeholder="고객번호를 입력하세요"
+                placeholder={t('transfer.enterCustomerNumberPlaceholder')}
                 className="w-full px-4 py-2.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
               />
             </div>
@@ -149,9 +151,9 @@ export default function TransferHistory() {
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                     </svg>
-                    조회 중...
+                    {t('transfer.searching')}
                   </span>
-                ) : '조회'}
+                ) : t('transfer.search')}
               </button>
             </div>
           </div>
@@ -160,20 +162,20 @@ export default function TransferHistory() {
         {/* 이체 내역 테이블 */}
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-            이체 내역
+            {t('transfer.transferHistoryTitle')}
           </h3>
           <div className="overflow-x-auto">
             <table className="w-full border-collapse">
               <thead>
                 <tr className="bg-gray-50 dark:bg-gray-700">
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">이체구분</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">거래일시</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">출금계좌</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">입금계좌</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">받는 분</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">이체금액</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">받는 통장 메모</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">상태</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('transfer.transferType')}</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('transfer.transactionDateTime')}</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('transfer.withdrawalAccount')}</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('transfer.depositAccount')}</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('transfer.recipient')}</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('transfer.transferAmount')}</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('transfer.recipientMemo')}</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{t('transfer.status')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
@@ -184,7 +186,7 @@ export default function TransferHistory() {
                       className={idx % 2 === 0 ? "bg-white dark:bg-gray-800" : "bg-gray-50 dark:bg-gray-700"}
                     >
                       <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-300">
-                        {transfer.divCd === "D" ? "당행" : "타행"}
+                        {transfer.divCd === "D" ? t('transfer.internal') : t('transfer.external')}
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-300">
                         {formatDate(transfer.trnfDtm)}
@@ -199,7 +201,7 @@ export default function TransferHistory() {
                         {transfer.rcvCstmNm || "-"}
                       </td>
                       <td className="px-4 py-3 text-sm font-medium text-blue-600 dark:text-blue-400">
-                        {transfer.trnfAmt.toLocaleString()} 원
+                        {transfer.trnfAmt.toLocaleString()} {t('common.currency')}
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-300">
                         {transfer.rcvMm || "-"}
@@ -214,7 +216,7 @@ export default function TransferHistory() {
                               : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300"
                           }`}
                         >
-                          {transfer.stsCd === "0" ? "진행중" : transfer.stsCd === "1" ? "성공" : "실패"}
+                          {transfer.stsCd === "0" ? t('transfer.inProgress') : transfer.stsCd === "1" ? t('transfer.success') : t('transfer.failed')}
                         </span>
                       </td>
                     </tr>
@@ -222,7 +224,7 @@ export default function TransferHistory() {
                 ) : (
                   <tr>
                     <td colSpan={8} className="px-4 py-3 text-center text-sm text-gray-500 dark:text-gray-400">
-                      이체 내역이 없습니다.
+                      {t('transfer.noTransferHistory')}
                     </td>
                   </tr>
                 )}
@@ -254,7 +256,7 @@ export default function TransferHistory() {
                 onClick={() => setModalOpen(false)}
                 className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm transition-colors duration-200"
               >
-                확인
+                {t('common.confirm')}
               </button>
             </div>
           </DialogPanel>

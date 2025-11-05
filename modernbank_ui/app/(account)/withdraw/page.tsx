@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { useSelector } from "react-redux";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { RootState } from "@/store/store";
 import { Dialog, DialogPanel, DialogTitle } from "@headlessui/react";
+import { useCallback, useEffect, useState } from "react";
+import { useSelector } from "react-redux";
 
 interface Account {
   acntNo: string;
@@ -19,6 +20,7 @@ interface WithdrawResult {
 
 export default function Withdraw() {
   const { user } = useSelector((state: RootState) => state.auth);
+  const { t } = useLanguage();
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [selectedAccount, setSelectedAccount] = useState<string>("");
   const [accountInfo, setAccountInfo] = useState<Account | null>(null);
@@ -36,7 +38,7 @@ export default function Withdraw() {
 
   const fetchAccounts = useCallback(async () => {
     if (!user) {
-      showModal("오류", "사용자 인증이 필요합니다.");
+      showModal(t('common.error'), t('account.authRequired'));
       return;
     }
 
@@ -50,7 +52,7 @@ export default function Withdraw() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "계좌 정보를 찾을 수 없습니다.");
+        throw new Error(data.error || t('errors.accountNotFound'));
       }
 
       const accounts = Array.isArray(data) ? data : data.data || [];
@@ -59,8 +61,8 @@ export default function Withdraw() {
       setSelectedAccount("");
       setAccountInfo(null);
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : "계좌 조회 중 오류가 발생했습니다.";
-      showModal("오류", errorMessage);
+      const errorMessage = error instanceof Error ? error.message : t('errors.accountInquiryFailed');
+      showModal(t('common.error'), errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -91,23 +93,23 @@ export default function Withdraw() {
 
       const contentType = response.headers.get('content-type');
       if (!contentType || !contentType.includes('application/json')) {
-        throw new Error('서버 응답이 JSON 형식이 아닙니다.');
+        throw new Error(t('errors.serverResponseNotJson'));
       }
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "계좌 정보를 찾을 수 없습니다.");
+        throw new Error(data.error || t('errors.accountNotFound'));
       }
 
       if (!data || typeof data !== 'object') {
-        throw new Error("계좌 정보를 찾을 수 없습니다.");
+        throw new Error(t('errors.accountNotFound'));
       }
 
       setAccountInfo(data);
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : "계좌 조회 중 오류가 발생했습니다.";
-      showModal("오류", errorMessage);
+      const errorMessage = error instanceof Error ? error.message : t('errors.accountInquiryFailed');
+      showModal(t('common.error'), errorMessage);
       setAccountInfo(null);
     } finally {
       setIsLoading(false);
@@ -116,11 +118,11 @@ export default function Withdraw() {
 
   const handleWithdraw = async () => {
     if (!withdrawAmount || Number(withdrawAmount) <= 0) {
-      showModal("오류", "유효한 출금 금액을 입력해주세요.");
+      showModal(t('common.error'), t('account.enterValidWithdrawalAmount'));
       return;
     }
     if (!accountInfo) {
-      showModal("오류", "계좌를 먼저 선택하세요.");
+      showModal(t('common.error'), t('account.selectAccountFirst'));
       return;
     }
 
@@ -142,19 +144,19 @@ export default function Withdraw() {
 
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.error || "출금 처리에 실패했습니다.");
+        throw new Error(data.error || t('account.withdrawalProcessingFailed'));
       }
 
       const data = await response.json();
       setWithdrawResult(data);
-      showModal("성공", `출금 완료! 금액: ${Number(withdrawAmount).toLocaleString()} 원`);
+      showModal(t('common.success'), `${t('account.withdrawalCompleted')} ${t('account.withdrawalAmount_')} ${Number(withdrawAmount).toLocaleString()} ${t('common.currency')}`);
       setAccountInfo((prev) =>
         prev ? { ...prev, acntBlnc: prev.acntBlnc - Number(withdrawAmount) } : prev
       );
       setWithdrawAmount("");
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : "출금 처리 중 오류가 발생했습니다.";
-      showModal("오류", errorMessage);
+      const errorMessage = error instanceof Error ? error.message : t('account.withdrawalProcessingError');
+      showModal(t('common.error'), errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -166,10 +168,10 @@ export default function Withdraw() {
         {/* 페이지 타이틀 */}
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-8">
           <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">
-            출금
+            {t('account.withdrawal')}
           </h2>
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            계좌를 선택하고 출금할 금액을 입력하세요.
+            {t('account.withdrawalDesc')}
           </p>
         </div>
 
@@ -182,7 +184,7 @@ export default function Withdraw() {
                 htmlFor="accountSelect"
                 className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
               >
-                계좌 선택
+                {t('account.selectAccount')}
               </label>
               <select
                 id="accountSelect"
@@ -190,7 +192,7 @@ export default function Withdraw() {
                 onChange={(e) => handleSelectAccount(e.target.value)}
                 className="w-full px-4 py-2.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
               >
-                <option value="">계좌를 선택하세요</option>
+                <option value="">{t('account.selectAccountDesc')}</option>
                 {accounts.map((account) => (
                   <option key={account.acntNo} value={account.acntNo}>
                     {account.acntNm} ({account.acntNo})
@@ -203,21 +205,21 @@ export default function Withdraw() {
             {accountInfo && (
               <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
                 <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                  계좌 정보
+                  {t('account.accountInfo')}
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">계좌명</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{t('account.accountName')}</p>
                     <p className="text-sm font-medium text-gray-900 dark:text-white">{accountInfo.acntNm}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">계좌번호</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{t('account.number')}</p>
                     <p className="text-sm font-medium text-gray-900 dark:text-white">{accountInfo.acntNo}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">현재 잔액</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{t('account.currentBalance')}</p>
                     <p className="text-sm font-medium text-gray-900 dark:text-white">
-                      {accountInfo.acntBlnc.toLocaleString()} 원
+                      {accountInfo.acntBlnc.toLocaleString()} {t('common.currency')}
                     </p>
                   </div>
                 </div>
@@ -231,7 +233,7 @@ export default function Withdraw() {
                   htmlFor="withdrawAmount"
                   className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
                 >
-                  출금할 금액
+                  {t('account.withdrawalAmount')}
                 </label>
                 <div className="relative">
                   <input
@@ -245,10 +247,10 @@ export default function Withdraw() {
                       setWithdrawAmount(numericValue);
                     }}
                     className="w-full px-4 py-2.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 pr-12 text-right [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                    placeholder="출금할 금액을 입력하세요"
+                    placeholder={t('account.enterWithdrawalAmount')}
                   />
                   <div className="absolute inset-y-0 right-0 flex items-center px-4 pointer-events-none">
-                    <span className="text-gray-500 dark:text-gray-400">원</span>
+                    <span className="text-gray-500 dark:text-gray-400">{t('common.currency')}</span>
                   </div>
                 </div>
               </div>
@@ -268,9 +270,9 @@ export default function Withdraw() {
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                     </svg>
-                    출금 중...
+                    {t('account.withdrawing')}
                   </span>
-                ) : '출금하기'}
+                ) : t('account.makeWithdrawal')}
               </button>
             )}
           </div>
@@ -280,25 +282,25 @@ export default function Withdraw() {
         {withdrawResult && (
           <div className="mt-8 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-              출금 결과
+              {t('account.withdrawalResult')}
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <p className="text-xs text-gray-500 dark:text-gray-400">출금 전 잔고</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">{t('account.balanceBeforeWithdrawal')}</p>
                 <p className="text-sm font-medium text-gray-900 dark:text-white">
-                  {withdrawResult.formerBlnc.toLocaleString()} 원
+                  {withdrawResult.formerBlnc.toLocaleString()} {t('common.currency')}
                 </p>
               </div>
               <div>
-                <p className="text-xs text-gray-500 dark:text-gray-400">출금액</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">{t('account.withdrawalAmountLabel')}</p>
                 <p className="text-sm font-medium text-gray-900 dark:text-white">
-                  {withdrawResult.trnsAmt.toLocaleString()} 원
+                  {withdrawResult.trnsAmt.toLocaleString()} {t('common.currency')}
                 </p>
               </div>
               <div>
-                <p className="text-xs text-gray-500 dark:text-gray-400">현재 잔고</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">{t('account.currentBalanceAfter')}</p>
                 <p className="text-sm font-medium text-gray-900 dark:text-white">
-                  {withdrawResult.acntBlnc.toLocaleString()} 원
+                  {withdrawResult.acntBlnc.toLocaleString()} {t('common.currency')}
                 </p>
               </div>
             </div>
@@ -328,7 +330,7 @@ export default function Withdraw() {
                 onClick={() => setModalOpen(false)}
                 className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm transition-colors duration-200"
               >
-                확인
+                {t('common.confirm')}
               </button>
             </div>
           </DialogPanel>

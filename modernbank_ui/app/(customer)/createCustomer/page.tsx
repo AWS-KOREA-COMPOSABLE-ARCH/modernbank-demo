@@ -1,12 +1,14 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { useSelector } from "react-redux";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { useApiClient } from "@/hooks/useApiClient";
 import { RootState } from "@/store/store";
+import { User } from "@/types/auth";
 import { Dialog, DialogBackdrop, DialogPanel, DialogTitle } from "@headlessui/react";
 import { CheckIcon, ExclamationTriangleIcon } from "@heroicons/react/24/outline";
-import { User } from "@/types/auth";
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useSelector } from "react-redux";
 
 interface FormData {
   cstmId: string;
@@ -20,6 +22,8 @@ interface FormData {
 export default function CreateCustomerPage() {
   const router = useRouter();
   const { user } = useSelector((state: RootState) => state.auth) as { user: User | null };
+  const { t } = useLanguage();
+  const apiClient = useApiClient();
 
   const [formData, setFormData] = useState<FormData>({
     cstmId: "",
@@ -34,90 +38,76 @@ export default function CreateCustomerPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [customerExists, setCustomerExists] = useState(false);
   const [modalContent, setModalContent] = useState({ title: "", message: "" });
+  const [initialized, setInitialized] = useState(false);
 
-  // 고객 정보 가져오기
-  const fetchCustomerData = useCallback(async (userId: string) => {
-    try {
-      const response = await fetch(`/api/customer?customerId=${userId}`, {
-        headers: {
-          'x-user-id': userId,
-        },
-      });
-      
-      if (response.ok) {
-        const customerData = await response.json();
-        console.log("Fetched customer data:", customerData);
-        setFormData({
-          cstmId: customerData.cstmId,
-          cstmNm: customerData.cstmNm,
-          cstmAge: customerData.cstmAge || "",
-          cstmGnd: customerData.cstmGnd || "1",
-          cstmAdr: customerData.cstmAdr || "",
-          cstmPn: customerData.cstmPn || "",
+
+
+  // 초기화 useEffect - 한 번만 실행
+  useEffect(() => {
+    const userId = user?.user_id;
+    if (!userId || initialized) return;
+    
+    console.log('Initializing customer check for user:', userId);
+    setInitialized(true);
+    setFormData(prev => ({ ...prev, cstmId: userId }));
+    
+    // 고객 존재 여부 확인
+    const checkCustomerExists = async () => {
+      try {
+        const response = await fetch(`/api/customer?customerId=${userId}&action=exists`, {
+          headers: { 'x-user-id': userId }
         });
-      } else {
-        console.error("Failed to fetch customer data:", response.status);
-      }
-    } catch (error) {
-      console.error("Error fetching customer data:", error);
-    }
-  }, []);
-
-  const checkCustomerExists = useCallback(async (userId: string) => {
-    try {
-      const response = await fetch(`/api/customer?customerId=${userId}&action=exists`, {
-        headers: {
-          'x-user-id': userId,
-        },
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        const exists = data === true || data === "true";
-        setCustomerExists(exists);
         
-        // 고객이 존재하면 고객 정보 가져오기
-        if (exists) {
-          fetchCustomerData(userId);
+        if (response.ok) {
+          const exists = await response.json();
+          setCustomerExists(exists === true);
+          
+          // 고객이 존재하면 정보 가져오기
+          if (exists === true) {
+            const customerResponse = await fetch(`/api/customer?customerId=${userId}`, {
+              headers: { 'x-user-id': userId }
+            });
+            
+            if (customerResponse.ok) {
+              const customerData = await customerResponse.json();
+              setFormData({
+                cstmId: customerData.cstmId,
+                cstmNm: customerData.cstmNm,
+                cstmAge: customerData.cstmAge || "",
+                cstmGnd: customerData.cstmGnd || "1",
+                cstmAdr: customerData.cstmAdr || "",
+                cstmPn: customerData.cstmPn || "",
+              });
+            }
+          }
         }
-      } else {
+      } catch (error) {
+        console.error("Error checking customer:", error);
         setCustomerExists(false);
       }
-    } catch (error) {
-      console.error("Error checking customer existence:", error);
-      setCustomerExists(false);
-    }
-  }, [fetchCustomerData]);
+    };
+    
+    checkCustomerExists();
+  }, [user?.user_id, initialized]);
 
+  // Username 가져오기 - 고객이 존재하지 않을 때만
   useEffect(() => {
-    if (user?.user_id) {
-      setFormData(prev => ({ ...prev, cstmId: user.user_id }));
-      checkCustomerExists(user.user_id);
-    }
-  }, [user, checkCustomerExists]);
-
-  // API auth에서 /user/username/{user_id}를 통해 username 받아오기
-  useEffect(() => {
-    if (user?.user_id && !customerExists) {
+    const userId = user?.user_id;
+    if (userId && initialized && !customerExists) {
       const fetchUsername = async () => {
         try {
-          const response = await fetch(`/api/auth/username/${user.user_id}`);
-          if (!response.ok) {
-            throw new Error('Failed to fetch username');
+          const response = await fetch(`/api/auth/username/${userId}`);
+          if (response.ok) {
+            const data = await response.json();
+            setFormData(prev => ({ ...prev, cstmNm: data.username }));
           }
-          const data = await response.json();
-          setFormData(prev => ({ ...prev, cstmNm: data.username }));
-        } catch {
-          setModalContent({
-            title: "오류",
-            message: "사용자 이름을 불러오는데 실패했습니다."
-          });
-          setModalOpen(true);
+        } catch (error) {
+          console.error('Failed to fetch username:', error);
         }
       };
       fetchUsername();
     }
-  }, [user, customerExists]);
+  }, [user?.user_id, initialized, customerExists]);
 
   // 고객 등록 또는 수정 처리
   const handleSubmit = async (e: React.FormEvent) => {
@@ -142,49 +132,42 @@ export default function CreateCustomerPage() {
         accounts: []
       };
 
-      console.log('[Customer Form] Submitting:', {
+      console.log(t('customer.customerFormSubmitting'), {
         method,
         customerExists,
         requestBody,
         userId: user.user_id
       });
       
-      const response = await fetch("/api/customer", {
-        method: method,
-        headers: {
-          "Content-Type": "application/json",
-          "x-user-id": user.user_id,
-        },
-        body: JSON.stringify(requestBody),
-      });
+      const response = customerExists 
+        ? await apiClient.put("/api/customer", requestBody, { "x-user-id": user.user_id })
+        : await apiClient.post("/api/customer", requestBody, { "x-user-id": user.user_id });
 
-      console.log('[Customer Form] Response status:', response.status);
-      console.log('[Customer Form] Response headers:', Object.fromEntries(response.headers));
+      console.log(t('customer.customerFormResponseStatus'), response.status);
+      console.log(t('customer.customerFormResponseHeaders'), Object.fromEntries(response.headers));
 
       const responseData = await response.json();
-      console.log('[Customer Form] Response data:', responseData);
-      console.log('[Customer Form] Response data type:', typeof responseData);
-      console.log('[Customer Form] Response data keys:', Object.keys(responseData));
-      console.log('[Customer Form] Response ok:', response.ok);
-      console.log('[Customer Form] Response status:', response.status);
+      console.log(t('customer.customerFormResponseData'), responseData);
+      console.log(t('customer.customerFormResponseDataType'), typeof responseData);
+      console.log(t('customer.customerFormResponseDataKeys'), Object.keys(responseData));
+      console.log(t('customer.customerFormResponseOk'), response.ok);
+      console.log(t('customer.customerFormResponseStatusCode'), response.status);
 
       if (!response.ok) {
         console.error('[Customer Form] Error response:', responseData);
-        throw new Error(responseData.error || "Failed to create/update customer");
+        throw new Error(responseData.error || t('customer.customerCreateUpdateError'));
       }
 
       // 성공 응답 처리
       setModalContent({
-        title: customerExists ? "고객 정보 수정" : "고객 등록",
-        message: customerExists ? "고객 정보가 수정되었습니다." : "고객 등록이 완료되었습니다."
+        title: customerExists ? t('customer.customerInfoModification') : t('customer.registration'),
+        message: customerExists ? t('customer.customerInfoModified') : t('customer.registrationComplete')
       });
       setModalOpen(true);
       
       // 고객 등록 성공 후 상태 업데이트
       if (!customerExists) {
         setCustomerExists(true);
-        // 고객 정보 다시 가져오기
-        await fetchCustomerData(user.user_id);
         
         // Header 컴포넌트 상태 강제 업데이트를 위한 이벤트 발생
         window.dispatchEvent(new CustomEvent('customerRegistered'));
@@ -192,8 +175,8 @@ export default function CreateCustomerPage() {
     } catch (error) {
       console.error("Customer create/update error:", error);
       setModalContent({
-        title: "오류",
-        message: error instanceof Error ? error.message : "고객 생성/수정 중 오류가 발생했습니다."
+        title: t('common.error'),
+        message: error instanceof Error ? error.message : t('customer.customerCreateUpdateError')
       });
       setModalOpen(true);
     } finally {
@@ -221,10 +204,10 @@ export default function CreateCustomerPage() {
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
         <div className="p-6">
           <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">
-            {customerExists ? "고객 정보 수정" : "고객 등록"}
+            {customerExists ? t('customer.modification') : t('customer.registration')}
           </h2>
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            고객 정보를 입력하여 {customerExists ? "수정" : "등록"}합니다.
+            {t('customer.enterInfo')} {customerExists ? t('customer.modify') : t('customer.register')}합니다.
           </p>
         </div>
       </div>
@@ -233,14 +216,14 @@ export default function CreateCustomerPage() {
       <div className="mt-8 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
         <div className="p-6">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-            고객 정보 입력
+            {t('customer.infoInput')}
           </h3>
           
           <form onSubmit={handleSubmit}>
             <div className="grid gap-6 mb-6 md:grid-cols-2">
               <div>
                 <label htmlFor="cstmId" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  고객 ID
+                  {t('customer.id')}
                 </label>
                 <input
                   type="text"
@@ -253,7 +236,7 @@ export default function CreateCustomerPage() {
 
               <div>
                 <label htmlFor="cstmNm" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  고객명
+                  {t('customer.name')}
                 </label>
                 <input
                   type="text"
@@ -266,7 +249,7 @@ export default function CreateCustomerPage() {
 
               <div>
                 <label htmlFor="cstmAge" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  나이
+                  {t('customer.age')}
                 </label>
                 <input
                   type="text"
@@ -274,13 +257,13 @@ export default function CreateCustomerPage() {
                   value={formData.cstmAge}
                   onChange={(e) => setFormData({ ...formData, cstmAge: e.target.value })}
                   className="w-full px-4 py-2.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
-                  placeholder="나이 입력"
+                  placeholder={t('customer.enterAge')}
                 />
               </div>
 
               <div>
                 <label htmlFor="cstmGnd" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  성별
+                  {t('customer.gender')}
                 </label>
                 <select
                   id="cstmGnd"
@@ -288,14 +271,14 @@ export default function CreateCustomerPage() {
                   onChange={(e) => setFormData({ ...formData, cstmGnd: e.target.value })}
                   className="w-full px-4 py-2.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="1">남</option>
-                  <option value="2">여</option>
+                  <option value="1">{t('customer.male')}</option>
+                  <option value="2">{t('customer.female')}</option>
                 </select>
               </div>
 
               <div className="md:col-span-2">
                 <label htmlFor="cstmAdr" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  주소
+                  {t('customer.address')}
                 </label>
                 <input
                   type="text"
@@ -303,13 +286,13 @@ export default function CreateCustomerPage() {
                   value={formData.cstmAdr}
                   onChange={(e) => setFormData({ ...formData, cstmAdr: e.target.value })}
                   className="w-full px-4 py-2.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
-                  placeholder="주소 입력"
+                  placeholder={t('customer.enterAddress')}
                 />
               </div>
 
               <div>
                 <label htmlFor="cstmPn" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  전화번호
+                  {t('customer.phone')}
                 </label>
                 <input
                   type="text"
@@ -317,7 +300,7 @@ export default function CreateCustomerPage() {
                   value={formData.cstmPn}
                   onChange={(e) => setFormData({ ...formData, cstmPn: e.target.value })}
                   className="w-full px-4 py-2.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
-                  placeholder="전화번호 입력"
+                  placeholder={t('customer.enterPhone')}
                 />
               </div>
             </div>
@@ -334,16 +317,16 @@ export default function CreateCustomerPage() {
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                     </svg>
-                    처리중...
+                    {t('customer.processing')}
                   </span>
-                ) : (customerExists ? "수정하기" : "등록하기")}
+                ) : (customerExists ? t('customer.modifyButton') : t('customer.registerButton'))}
               </button>
               <button
                 type="button"
                 onClick={handleClear}
                 className="px-6 py-2.5 text-sm font-medium text-red-600 border border-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors duration-200"
               >
-                초기화
+                {t('customer.reset')}
               </button>
             </div>
           </form>
@@ -399,7 +382,7 @@ export default function CreateCustomerPage() {
                   }}
                   className="inline-flex w-full justify-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
                 >
-                  확인
+                  {t('common.confirm')}
                 </button>
               </div>
             </DialogPanel>

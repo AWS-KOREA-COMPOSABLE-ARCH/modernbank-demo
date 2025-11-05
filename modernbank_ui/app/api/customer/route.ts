@@ -1,11 +1,12 @@
-import { NextRequest, NextResponse } from 'next/server';
 import apiClient from '@/utils/apiClient';
+import { getApiMessage } from '@/utils/apiI18n';
+import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 
-// 고객 스키마 정의
+// 고객 스키마 정의 (기본 영어 메시지 사용)
 const customerSchema = z.object({
-  cstmId: z.string().min(1, "고객 ID는 필수입니다"),
-  cstmNm: z.string().min(1, "고객명은 필수입니다"),
+  cstmId: z.string().min(1, "Customer ID is required"),
+  cstmNm: z.string().min(1, "Customer name is required"),
   cstmAge: z.string().optional(),
   cstmGnd: z.string().optional(),
   cstmPn: z.string().optional(),
@@ -25,7 +26,7 @@ export async function GET(request: NextRequest) {
 
     if (!customerId) {
       return NextResponse.json(
-        { error: '고객 ID가 필요합니다.' },
+        { error: getApiMessage(request, 'api.customerIdRequired') },
         { status: 400 }
       );
     }
@@ -34,9 +35,7 @@ export async function GET(request: NextRequest) {
     if (action === "exists") {
       // 고객 존재 여부 확인
       try {
-        response = await apiClient("CUSTOMER", `/${customerId}/exists`, "GET", {}, {
-          'Content-Type': 'application/json'
-        });
+        response = await apiClient("CUSTOMER", `/${customerId}/exists`, "GET");
       } catch (error) {
         // 417 에러는 고객이 존재하지 않는 것을 의미
         if (error instanceof Error && error.message.includes("ID does not exist")) {
@@ -47,14 +46,12 @@ export async function GET(request: NextRequest) {
     } else {
       // 기본 고객 정보 조회
       try {
-        response = await apiClient("CUSTOMER", `/${customerId}`, "GET", {}, {
-          'Content-Type': 'application/json'
-        });
+        response = await apiClient("CUSTOMER", `/${customerId}`, "GET");
       } catch (error) {
         // 417 에러는 고객이 존재하지 않는 것을 의미
         if (error instanceof Error && error.message.includes("ID does not exist")) {
           return NextResponse.json(
-            { error: '고객 정보를 찾을 수 없습니다.' },
+            { error: getApiMessage(request, 'api.customerNotFound') },
             { status: 404 }
           );
         }
@@ -64,7 +61,7 @@ export async function GET(request: NextRequest) {
 
     if (!response?.data && action !== "exists") {
       return NextResponse.json(
-        { error: '고객 정보를 찾을 수 없습니다.' },
+        { error: getApiMessage(request, 'api.customerNotFound') },
         { status: 404 }
       );
     }
@@ -73,7 +70,7 @@ export async function GET(request: NextRequest) {
 
   } catch (error: unknown) {
     console.error('[Customer API] Error:', error);
-    const errorMessage = error instanceof Error ? error.message : '서버 오류가 발생했습니다.';
+    const errorMessage = error instanceof Error ? error.message : getApiMessage(request, 'api.serverError');
     return NextResponse.json(
       { error: errorMessage },
       { status: 500 }
@@ -103,9 +100,7 @@ export async function POST(request: NextRequest) {
       }
       
       console.log('[Customer API POST] Calling backend API...');
-      const response = await apiClient("CUSTOMER", "/", "POST", validatedData, {
-        'Content-Type': 'application/json'
-      });
+      const response = await apiClient("CUSTOMER", "/", "POST", validatedData);
 
       console.log('[Customer API POST] Backend response:', response);
       console.log('[Customer API POST] Backend response data:', response?.data);
@@ -117,7 +112,7 @@ export async function POST(request: NextRequest) {
       // 백엔드에서 0을 성공 응답으로 보내는 경우 처리
       if (response?.data === 0 || response?.data) {
         const successResponse = { 
-          message: '고객 등록이 완료되었습니다.',
+          message: getApiMessage(request, 'api.customerRegistrationComplete'),
           data: response.data 
         };
         console.log('[Customer API POST] Sending success response:', successResponse);
@@ -127,7 +122,7 @@ export async function POST(request: NextRequest) {
       // 백엔드 응답이 없거나 실패한 경우
       console.log('[Customer API POST] Backend response is falsy, sending error');
       return NextResponse.json(
-        { error: '고객 등록에 실패했습니다.' },
+        { error: getApiMessage(request, 'api.customerRegistrationFailed') },
         { status: 400 }
       );
       
@@ -146,7 +141,7 @@ export async function POST(request: NextRequest) {
 
   } catch (error: unknown) {
     console.error('[Customer API POST] Error:', error);
-    const errorMessage = error instanceof Error ? error.message : '서버 오류가 발생했습니다.';
+    const errorMessage = error instanceof Error ? error.message : getApiMessage(request, 'api.serverError');
     return NextResponse.json(
       { error: errorMessage },
       { status: 500 }
@@ -170,7 +165,7 @@ export async function PUT(request: NextRequest) {
 
     if (!userId) {
       return NextResponse.json(
-        { error: '사용자 정보가 없습니다.' },
+        { error: getApiMessage(request, 'api.userInfoRequired') },
         { status: 401 }
       );
     }
@@ -189,13 +184,13 @@ export async function PUT(request: NextRequest) {
 
       if (!response?.data) {
         return NextResponse.json(
-          { error: '고객 정보 수정에 실패했습니다.' },
+          { error: getApiMessage(request, 'api.customerUpdateFailed') },
           { status: 400 }
         );
       }
 
       return NextResponse.json({ 
-        message: '고객 정보 수정이 완료되었습니다.',
+        message: getApiMessage(request, 'api.customerUpdateComplete'),
         data: response.data 
       }, { status: 200 });
       
@@ -213,7 +208,7 @@ export async function PUT(request: NextRequest) {
 
   } catch (error: unknown) {
     console.error('[Customer API PUT] Error:', error);
-    const errorMessage = error instanceof Error ? error.message : '서버 오류가 발생했습니다.';
+    const errorMessage = error instanceof Error ? error.message : getApiMessage(request, 'api.serverError');
     return NextResponse.json(
       { error: errorMessage },
       { status: 500 }
@@ -228,7 +223,7 @@ export async function DELETE(request: NextRequest) {
 
     if (!customerId) {
       return NextResponse.json(
-        { error: "고객 ID가 필요합니다." },
+        { error: getApiMessage(request, "api.customerIdRequired") },
         { status: 400 }
       );
     }
@@ -237,7 +232,7 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json(response.data);
   } catch (error: unknown) {
     console.error("[Customer DELETE] Error:", error);
-    const errorMessage = error instanceof Error ? error.message : "서버 오류가 발생했습니다.";
+    const errorMessage = error instanceof Error ? error.message : getApiMessage(request, "api.serverError");
     return NextResponse.json(
       { error: errorMessage },
       { status: 500 }

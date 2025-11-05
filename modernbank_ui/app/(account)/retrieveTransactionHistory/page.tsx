@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useSelector } from "react-redux";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { RootState } from "@/store/store";
 import { Dialog, DialogPanel, DialogTitle } from "@headlessui/react";
+import { useEffect, useState } from "react";
+import { useSelector } from "react-redux";
 
 interface Transaction {
   acntNo: string;
@@ -26,6 +27,7 @@ interface Account {
 
 export default function TransactionHistory() {
   const { user } = useSelector((state: RootState) => state.auth);
+  const { t } = useLanguage();
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [selectedAccount, setSelectedAccount] = useState<string>("");
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -43,7 +45,7 @@ export default function TransactionHistory() {
   useEffect(() => {
     const fetchAccounts = async () => {
       if (!user?.user_id) {
-        showModal("오류", "사용자 인증이 필요합니다.");
+        showModal(t('common.error'), t('account.authRequired'));
         return;
       }
 
@@ -56,7 +58,7 @@ export default function TransactionHistory() {
 
         if (!response.ok) {
           const data = await response.json();
-          throw new Error(data.error || "계좌 목록을 불러올 수 없습니다.");
+          throw new Error(data.error || t('errors.accountNotFound'));
         }
 
         const data = await response.json();
@@ -64,8 +66,8 @@ export default function TransactionHistory() {
         // 자동으로 첫 번째 계좌를 선택하지 않음
         setSelectedAccount("");
       } catch (error: unknown) {
-        const errorMessage = error instanceof Error ? error.message : "계좌 목록 조회 중 오류가 발생했습니다.";
-        showModal("오류", errorMessage);
+        const errorMessage = error instanceof Error ? error.message : t('errors.accountInquiryFailed');
+        showModal(t('common.error'), errorMessage);
         setError(errorMessage);
       }
     };
@@ -88,7 +90,7 @@ export default function TransactionHistory() {
 
         if (!response.ok) {
           const data = await response.json();
-          throw new Error(data.error || "거래 내역을 불러올 수 없습니다.");
+          throw new Error(data.error || t('account.noTransactionHistory'));
         }
 
         const data = await response.json();
@@ -133,8 +135,8 @@ export default function TransactionHistory() {
 
         setTransactions(finalTransactions);
       } catch (error: unknown) {
-        const errorMessage = error instanceof Error ? error.message : "거래 내역 조회 중 오류가 발생했습니다.";
-        showModal("오류", errorMessage);
+        const errorMessage = error instanceof Error ? error.message : t('account.transactionHistoryError');
+        showModal(t('common.error'), errorMessage);
         setError(errorMessage);
       } finally {
         setIsLoading(false);
@@ -160,24 +162,24 @@ export default function TransactionHistory() {
   const getTransactionType = (divCd: string) => {
     switch (divCd) {
       case 'D':
-        return { text: '입금', color: 'text-blue-600 dark:text-blue-400' };
+        return { text: t('account.deposit'), color: 'text-blue-600 dark:text-blue-400' };
       case 'W':
-        return { text: '출금', color: 'text-red-600 dark:text-red-400' };
+        return { text: t('account.withdrawal'), color: 'text-red-600 dark:text-red-400' };
       default:
-        return { text: '알 수 없음', color: 'text-gray-600 dark:text-gray-400' };
+        return { text: t('account.unknown'), color: 'text-gray-600 dark:text-gray-400' };
     }
   };
 
   const getTransactionStatus = (stsCd: string) => {
     switch (stsCd) {
       case '0':
-        return { text: '진행중', color: 'text-yellow-600 dark:text-yellow-400' };
+        return { text: t('account.inProgress'), color: 'text-yellow-600 dark:text-yellow-400' };
       case '1':
-        return { text: '성공', color: 'text-green-600 dark:text-green-400' };
+        return { text: t('account.success'), color: 'text-green-600 dark:text-green-400' };
       case '2':
-        return { text: '실패', color: 'text-red-600 dark:text-red-400' };
+        return { text: t('account.failed'), color: 'text-red-600 dark:text-red-400' };
       default:
-        return { text: '알 수 없음', color: 'text-gray-600 dark:text-gray-400' };
+        return { text: t('account.unknown'), color: 'text-gray-600 dark:text-gray-400' };
     }
   };
 
@@ -195,10 +197,10 @@ export default function TransactionHistory() {
         {/* 페이지 타이틀 */}
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-8">
           <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">
-            거래 내역 조회
+            {t('account.transactionHistoryInquiry')}
           </h2>
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            계좌의 거래 내역을 조회합니다.
+            {t('account.transactionHistoryInquiryDesc')}
           </p>
         </div>
 
@@ -216,7 +218,7 @@ export default function TransactionHistory() {
               htmlFor="account"
               className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
             >
-              계좌 선택
+              {t('account.selectAccount')}
             </label>
             <select
               id="account"
@@ -224,7 +226,7 @@ export default function TransactionHistory() {
               onChange={(e) => setSelectedAccount(e.target.value)}
               className="w-full px-4 py-2.5 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
             >
-              <option value="">계좌를 선택하세요</option>
+              <option value="">{t('account.selectAccountDesc')}</option>
               {accounts.map((account) => (
                 <option key={account.acntNo} value={account.acntNo}>
                   {account.acntNm} ({account.acntNo})
@@ -242,19 +244,19 @@ export default function TransactionHistory() {
                 <thead className="bg-gray-50 dark:bg-gray-700/50">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      거래일시
+                      {t('account.transactionDate')}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      거래구분
+                      {t('account.transactionDivision')}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      거래금액
+                      {t('account.transactionAmount')}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      거래후잔액
+                      {t('account.afterBalance')}
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                      상태
+                      {t('transfer.status')}
                     </th>
                   </tr>
                 </thead>
@@ -267,7 +269,7 @@ export default function TransactionHistory() {
                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                           </svg>
-                          <span className="ml-2">거래내역 조회 중...</span>
+                          <span className="ml-2">{t('account.transactionInquiring')}</span>
                         </div>
                       </td>
                     </tr>
@@ -287,12 +289,12 @@ export default function TransactionHistory() {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                             <span className={type.color}>
-                              {formatAmount(transaction.trnsAmt, divCd)} 원
+                              {formatAmount(transaction.trnsAmt, divCd)} {t('common.currency')}
                             </span>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm">
                             <span className={transaction.stsCd === '0' ? 'text-yellow-600 dark:text-yellow-400' : 'text-gray-900 dark:text-white'}>
-                              {transaction.acntBlnc.toLocaleString()} 원
+                              {transaction.acntBlnc.toLocaleString()} {t('common.currency')}
                             </span>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm">
@@ -304,7 +306,7 @@ export default function TransactionHistory() {
                   ) : (
                     <tr>
                       <td colSpan={5} className="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
-                        거래 내역이 없습니다.
+                        {t('account.noTransactions')}
                       </td>
                     </tr>
                   )}
@@ -318,9 +320,9 @@ export default function TransactionHistory() {
               <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
-              <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">계좌를 선택하세요</h3>
+              <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">{t('account.selectAccountToView')}</h3>
               <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                거래 내역을 조회하려면 위에서 계좌를 선택해주세요.
+                {t('account.selectAccountToViewDesc')}
               </p>
             </div>
           </div>
@@ -349,7 +351,7 @@ export default function TransactionHistory() {
                 onClick={() => setModalOpen(false)}
                 className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm transition-colors duration-200"
               >
-                확인
+                {t('common.confirm')}
               </button>
             </div>
           </DialogPanel>
