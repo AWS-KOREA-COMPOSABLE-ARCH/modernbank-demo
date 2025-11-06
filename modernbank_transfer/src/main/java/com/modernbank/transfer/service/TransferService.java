@@ -168,22 +168,7 @@ public class TransferService {
     @CircuitBreaker(name = "accountService", fallbackMethod = "fallbackPerformWithdrawal")
     @Retry(name = "accountService")
     private TransactionResult performWithdrawal(String acntNo, Long amount, String branch, String divCd, String stsCd) {
-        TransactionHistory.TransactionHistoryBuilder builder = TransactionHistory.builder()
-        .acntNo(acntNo)
-        .trnsAmt(amount)
-        .trnsBrnch(branch);
-
-        if (divCd != null) {
-            builder.divCd(divCd);
-        }
-        if (stsCd != null) {
-System.out.println("stsCd at performWithdrawal in TransferService =====> " + stsCd);
-            builder.stsCd(stsCd);
-        }
-
-        TransactionHistory transaction = builder.build();
-        
-        return restTemplate.postForObject(accountServiceUrl + "/withdrawals/", transaction, TransactionResult.class);
+        // TODO
     }
 
     private void fallbackPerformWithdrawal(String acntNo, Long amount, String branch, Exception e) {

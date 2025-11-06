@@ -43,35 +43,7 @@ public class TransferProducer {
     private String accountServiceUrl;
 
     public void sendB2BTransferMessage(TransferHistory transfer) {
-          CompletableFuture<SendResult<String, TransferHistory>> future = transferKafkaTemplate.send(b2bTransferTopicName, transfer);
-
-        future.whenComplete((result, ex) -> {
-            if (ex == null) {
-                TransferHistory g = result.getProducerRecord().value();
-                LOGGER.info("Sent message=[" + g.getCstmId() + "] with offset=[" + result.getRecordMetadata().offset() + "]");
-            } else {
-                // If there's a problem delivering inter-bank transfer information to Amazon MSK, start compensation transaction
-                transfer.setStsCd("2");
-                String wthdAcntNo = transfer.getWthdAcntNo();
-                int wthdAcntSeq = transfer.getWthdAcntSeq();
-
-                TransactionHistory transactionHistory = TransactionHistory.builder()
-                    .acntNo(wthdAcntNo)
-                    .seq(wthdAcntSeq)
-                    .divCd("W")
-                    .stsCd("2")
-                    .build();
-  
-                restTemplate.postForObject(
-                    accountServiceUrl + "/withdrawals/cancel/",
-                    transactionHistory,
-                    Integer.class
-                );
-
-                LOGGER.error("Unable to send message=[" + transfer.getCstmId() + "] due to : " + ex.getMessage());
-                throw new SystemException("Kafka data transmission error");
-            }
-        });
+        // TODO
     }
     
     public void sendUpdatingTansferLimitMessage(TransferLimit transferLimit) {

@@ -37,11 +37,7 @@ public class TransferController {
     @Operation(summary = "Inter-Bank Transfer", method = "POST", description = "Inter-Bank Transfer")
     @RequestMapping(method = RequestMethod.POST, path = "/external")
     public Boolean btobTransfer(@RequestBody TransferHistory input) throws Exception{
-        // divCD W is inter-bank transfer
-        input.setDivCd("W");
-        // stsCD 0: processing request, 1: success, 2: failure
-        // input.setStsCd("0");
-        return transferService.interBankTransfer(input);
+        // TODO
     }
 
     @Operation(summary = "Retrieve Transfer History", method = "GET", description = "Retrieve Transfer History")
