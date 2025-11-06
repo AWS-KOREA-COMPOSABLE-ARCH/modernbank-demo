@@ -85,7 +85,7 @@ export default function Header() {
             }
           }
         } catch (error) {
-          console.error('상품 서비스 상태 확인 실패:', error);
+          console.error('Failed to check product service status:', error);
           if (isMounted) {
             setProductServiceStatus({ status: 'DOWN' });
           }
@@ -151,7 +151,7 @@ export default function Header() {
             setHasCustomer(false);
           }
         } catch (error) {
-          console.error('고객 존재 여부 확인 실패:', error);
+          console.error('Failed to check customer existence:', error);
           setHasCustomer(false);
         }
       }
@@ -163,7 +163,7 @@ export default function Header() {
   // Customer registration event listener
   useEffect(() => {
     const handleCustomerRegistered = () => {
-      console.log('고객 등록 이벤트 수신, 상태 업데이트');
+      console.log('Customer registration event received, status updated');
       setHasCustomer(true);
     };
 
@@ -312,7 +312,7 @@ export default function Header() {
             ModernBank
           </Link>
 
-          {/* 데스크톱 네비게이션 */}
+          {/* Desktop nevigation */}
           <div className="hidden md:flex items-center space-x-6 navigation-menu">
             {isAuthenticated && (
               <div className="flex items-center space-x-6">
@@ -357,7 +357,7 @@ export default function Header() {
               </div>
             )}
 
-            {/* 테마 토글 + 언어 토글 + 유저 */}
+            {/* Theme toggle + language toggle + user */}
             <div className="flex items-center space-x-2">
               <LanguageToggle />
               <DarkModeToggle />
@@ -384,7 +384,7 @@ export default function Header() {
             )}
           </div>
 
-          {/* 모바일 메뉴 버튼 */}
+          {/* Mobile menu button */}
           <div className="md:hidden flex items-center space-x-3">
             <LanguageToggle />
             <DarkModeToggle />
@@ -415,7 +415,7 @@ export default function Header() {
           </div>
         </div>
 
-        {/* 모바일 메뉴 */}
+        {/* Mobile menu */}
         <div
           className={`md:hidden fixed top-20 left-0 right-0 backdrop-blur bg-white/90 dark:bg-gray-900/90 border-t border-gray-200 dark:border-gray-700 shadow-lg transition-all duration-300 ${isMenuOpen ? 'opacity-100 visible' : 'opacity-0 invisible'
             }`}
