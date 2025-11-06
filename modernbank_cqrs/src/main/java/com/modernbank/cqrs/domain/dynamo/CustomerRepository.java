@@ -14,24 +14,24 @@ public class CustomerRepository {
     @Autowired
     private DynamoDBMapper dynamoDBMapper;
     
-    // 생성
+    // Create
     public Customer saveCustomer(Customer customer) {
         dynamoDBMapper.save(customer);
         return customer;
     }
     
-    // 조회
+    // Read
     public Customer getCustomerById(String customerId) {
         return dynamoDBMapper.load(Customer.class, customerId);
     }
 
-    // 삭제
+    // Delete
     public String deleteCustomerById(String customerId) {
         dynamoDBMapper.delete(dynamoDBMapper.load(Customer.class, customerId));
         return "Customer Id : "+ customerId +" Deleted!";
     }
 
-    // 수정
+    // Update
     public String updateCustomer(Customer customer) {
         dynamoDBMapper.save(customer,
                 new DynamoDBSaveExpression()

@@ -128,7 +128,7 @@ public class TransferService {
         transferHistory.setStsCd("1");
         createTransferHistory(transferHistory);
         
-        // 내부 이체의 경우 '0' 즉, 팬딩 처리 없이 바로 출금 성공 처리(1)를 한다.
+        // For internal transfers, process withdrawal success (1) immediately without pending processing (0).
         performWithdrawal(wthdAcntNo, trnfAmt, sndMm,transferHistory.getDivCd(), transferHistory.getStsCd());
 
         performDeposit(dpstAcntNo, trnfAmt, rcvMm);
@@ -218,10 +218,10 @@ System.out.println("stsCd at performWithdrawal in TransferService =====> " + sts
         
         transfer.setSeq(seq);
         transfer.setDivCd("W");        
-        // TB_TRNF_HST 테이블에 이체 이력 남기기
+        // Record transfer history in TB_TRNF_HST table
         createTransferHistory(transfer);
         
-        // Account Service에 고객 계좌에서 타행 이체 금액 인출
+        // Withdraw inter-bank transfer amount from customer account via Account Service
         // TransactionResult withdrawResult = performWithdrawalForBtob(wthdAcntNo, trnfAmt, sndMm, transfer.getDivCd(), transfer.getStsCd());
         TransactionResult withdrawResult = performWithdrawal(wthdAcntNo, trnfAmt, sndMm, transfer.getDivCd(), transfer.getStsCd());
         
@@ -231,7 +231,7 @@ System.out.println("stsCd at performWithdrawal in TransferService =====> " + sts
         
         int wthdAcntSeq = withdrawResult.getSeq();
         transfer.setWthdAcntSeq(wthdAcntSeq);
-        // Bank to bank Transfer(타행이체 서비스) 서비스에 이체 정보 보내기
+        // Send transfer information to Bank to Bank Transfer service
         transferProducer.sendB2BTransferMessage(transfer);
         transferProducer.sendCQRSTransferMessage(transfer);
             

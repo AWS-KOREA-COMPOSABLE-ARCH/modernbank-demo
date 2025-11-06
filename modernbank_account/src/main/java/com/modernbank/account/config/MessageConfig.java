@@ -32,15 +32,15 @@ public class MessageConfig implements WebMvcConfigurer {
                 String acceptLanguage = request.getHeader("Accept-Language");
                 
                 if (acceptLanguage != null && !acceptLanguage.isEmpty()) {
-                    // 한국어가 포함되어 있으면 한국어 사용
+                    // Use Korean if Korean is included
                     if (acceptLanguage.toLowerCase().contains("ko")) {
                         return Locale.KOREAN;
                     }
-                    // 한국어가 없으면 영어 사용
+                    // Use English if Korean is not present
                     return Locale.ENGLISH;
                 }
                 
-                // Accept-Language 헤더가 없으면 기본값 (한국어)
+                // Default value (Korean) if Accept-Language header is not present
                 return Locale.KOREAN;
             }
         };

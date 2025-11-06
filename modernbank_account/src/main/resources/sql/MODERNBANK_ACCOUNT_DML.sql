@@ -1,4 +1,4 @@
--- ON CONFLICT를 사용한 중복 방지
+-- Prevent duplicates using ON CONFLICT
 INSERT INTO TB_ACNT(ACNT_NO, CSTM_ID, CSTM_NM, ACNT_NM, NEW_DTM)
 VALUES
   ('111101', '1111', 'Hong Gildong', 'Sample Account', '2020-01-29 18:10:44'),

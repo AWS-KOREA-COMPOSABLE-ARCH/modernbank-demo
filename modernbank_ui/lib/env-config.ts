@@ -1,12 +1,12 @@
-// 환경별 기본 언어 설정
+// Default language setting by environment
 export const getDefaultLanguage = (): 'ko' | 'en' => {
-  // 환경 변수로 기본 언어 설정
+  // Set default language via environment variable
   const envLang = process.env.NEXT_PUBLIC_DEFAULT_LANGUAGE;
   if (envLang === 'en' || envLang === 'ko') {
     return envLang;
   }
   
-  // 도메인 기반 언어 감지
+  // Domain-based language detection
   if (typeof window !== 'undefined') {
     const hostname = window.location.hostname;
     if (hostname.includes('en.') || hostname.includes('.com')) {
@@ -14,6 +14,6 @@ export const getDefaultLanguage = (): 'ko' | 'en' => {
     }
   }
   
-  // 기본값: 한국어
+  // Default: Korean
   return 'ko';
 };

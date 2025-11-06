@@ -49,7 +49,7 @@ export default function Header() {
     setMounted(true);
   }, []);
 
-  // 스크롤 이벤트 처리
+  // Handle scroll events
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 0);
@@ -58,7 +58,8 @@ export default function Header() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // 상품 서비스 상태 확인
+  // Check product service status
+
    useEffect(() => {
     let isMounted = true;
     
@@ -93,7 +94,7 @@ export default function Header() {
     };
 
     checkProductServiceHealth();
-    // 10초마다 상태 확인
+    // Check status every 10 seconds
     const interval = setInterval(checkProductServiceHealth, 10000);
     
     return () => {
@@ -102,7 +103,7 @@ export default function Header() {
     };
   }, [isAuthenticated, user?.user_id]);
   
-  // 모바일 메뉴 닫기 처리
+  // Handle mobile menu closing
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth > 768) {
@@ -113,7 +114,7 @@ export default function Header() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // 외부 클릭 시 메뉴 닫기
+  // Close menu on outside click
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
@@ -126,13 +127,13 @@ export default function Header() {
     return () => document.removeEventListener('click', handleClickOutside);
   }, []);
 
-  // 페이지 변경 시 메뉴 닫기
+  // Close menu on page change
   useEffect(() => {
     setActiveCategory(null);
     setIsMenuOpen(false);
   }, [pathname]);
 
-  // 고객 존재 여부 확인
+  // Check if customer exists
   useEffect(() => {
     const checkCustomerExists = async () => {
       if (isAuthenticated && user?.user_id) {
@@ -159,7 +160,7 @@ export default function Header() {
     checkCustomerExists();
   }, [isAuthenticated, user]);
 
-  // 고객 등록 이벤트 리스너
+  // Customer registration event listener
   useEffect(() => {
     const handleCustomerRegistered = () => {
       console.log('고객 등록 이벤트 수신, 상태 업데이트');
@@ -187,7 +188,7 @@ export default function Header() {
     setActiveCategory(activeCategory === categoryName ? null : categoryName);
   };
 
-  // 상품 서비스가 활성화되어 있는지 확인
+  // Check if product service is active
   const isProductServiceActive = productServiceStatus?.status === 'UP';
 
   // Define navigation data based on customer information
@@ -250,7 +251,7 @@ export default function Header() {
                 },
               ],
             },
-            // 상품 서비스가 활성화된 경우에만 상품 메뉴 추가
+            // Add product menu only when product service is active
             ...(isProductServiceActive ? [{
               name: t('nav.product'),
               subMenu: [
@@ -278,7 +279,7 @@ export default function Header() {
             },
           ]
         : [
-            // 고객이 없는 경우 고객 등록 메뉴만 표시
+            // Show only customer registration menu when no customer exists
             {
               name: t('nav.customerRegistration'),
               subMenu: [
@@ -290,7 +291,7 @@ export default function Header() {
               ],
             },
           ]
-      : [], // 로그인하지 않은 경우 빈 메뉴
+      : [], // Empty menu when not logged in
   };
 
   if (!mounted) {

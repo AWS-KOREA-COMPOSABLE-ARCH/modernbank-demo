@@ -16,10 +16,10 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class DynamoDBConfig {
 
-    @Value("${aws.dynamodb.endpoint:}") // 환경 변수 또는 프로퍼티에서 엔드포인트 가져오기 (없으면 빈 값)
+    @Value("${aws.dynamodb.endpoint:}") // Get endpoint from environment variable or property (empty if not present)
     private String endPoint;
 
-    @Value("${aws.region:ap-northeast-2}") // 기본 리전 설정
+    @Value("${aws.region:ap-northeast-2}") // Default region setting
     private String region;
 
     private static final Logger logger = LoggerFactory.getLogger(DynamoDBConfig.class);
@@ -41,14 +41,14 @@ public class DynamoDBConfig {
         AmazonDynamoDBClientBuilder builder = AmazonDynamoDBClientBuilder.standard();
 
         if (endPoint != null && !endPoint.isEmpty() && endPoint.equals("http://localhost:8000")) {
-            // 로컬 DynamoDB 사용 (IAM 인증 없음)
+            // Use local DynamoDB (no IAM authentication)
             logger.info("Using Local DynamoDB at {}", endPoint);
             builder.withEndpointConfiguration(new AwsClientBuilder.EndpointConfiguration(endPoint, region));
         } else {
-            // AWS Public Endpoint 사용 (IRSA 적용)
+            // Use AWS Public Endpoint (with IRSA)
             logger.info("Using AWS DynamoDB in region: {}", region);
             builder.withRegion(region);
-            builder.withCredentials(WebIdentityTokenCredentialsProvider.create()); // IRSA 적용
+            builder.withCredentials(WebIdentityTokenCredentialsProvider.create()); // Apply IRSA
         }
 
         return builder.build();

@@ -1,6 +1,6 @@
-// API 클라이언트 유틸리티
+// API client utility
 export const createApiHeaders = (currentLanguage?: 'ko' | 'en', additionalHeaders: Record<string, string> = {}) => {
-  // 현재 설정된 언어에 따라 Accept-Language 헤더 설정
+  // Set Accept-Language header based on currently configured language
   let acceptLanguage = 'ko-KR,ko;q=0.9';
   
   if (currentLanguage === 'en') {
@@ -8,7 +8,7 @@ export const createApiHeaders = (currentLanguage?: 'ko' | 'en', additionalHeader
   } else if (currentLanguage === 'ko') {
     acceptLanguage = 'ko-KR,ko;q=0.9';
   } else {
-    // currentLanguage가 없으면 브라우저 설정 사용
+    // Use browser settings if currentLanguage is not available
     acceptLanguage = navigator.language === 'en' || navigator.language.startsWith('en') 
       ? 'en-US,en;q=0.9' 
       : 'ko-KR,ko;q=0.9';
@@ -23,7 +23,7 @@ export const createApiHeaders = (currentLanguage?: 'ko' | 'en', additionalHeader
   return headers;
 };
 
-// API 요청 래퍼 함수
+// API request wrapper function
 export const apiRequest = async (
   url: string, 
   options: RequestInit = {},

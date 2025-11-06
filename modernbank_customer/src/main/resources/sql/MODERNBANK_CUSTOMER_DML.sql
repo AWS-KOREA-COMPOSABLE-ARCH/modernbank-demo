@@ -1,4 +1,4 @@
--- TB_CSTM 데이터 입력 (중복 방지)
+-- Insert TB_CSTM data (prevent duplicates)
 INSERT INTO TB_CSTM(CSTM_ID, CSTM_NM, CSTM_AGE, CSTM_GND, CSTM_PN, CSTM_ADR)
 VALUES
   ('1111', 'Hong Gildong', '20', '1','01012341234' , 'Yeoksam'),

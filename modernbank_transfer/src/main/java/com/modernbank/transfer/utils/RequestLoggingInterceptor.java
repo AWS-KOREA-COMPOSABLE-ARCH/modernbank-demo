@@ -43,7 +43,7 @@ public class RequestLoggingInterceptor implements HandlerInterceptor {
 
     @Override
     public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler, ModelAndView modelAndView) throws Exception {
-        // 필요한 경우 여기에 추가 로직
+        // Add additional logic here if needed
     }
 
     @Override
@@ -59,6 +59,6 @@ public class RequestLoggingInterceptor implements HandlerInterceptor {
 
         logger.info(logMessage.toString());
 
-        logMessageThreadLocal.remove(); // 스레드 로컬 변수 정리
+        logMessageThreadLocal.remove(); // Clean up thread local variables
     }
 }

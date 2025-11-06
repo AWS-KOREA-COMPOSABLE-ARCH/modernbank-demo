@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect } from "react";
-import { useRouter, usePathname } from "next/navigation";
-import { useDispatch, useSelector } from "react-redux";
-import { RootState } from "@/store/store";
 import { setUser } from "@/store/slices/authSlice";
+import { RootState } from "@/store/store";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
 
 interface AuthGuardProps {
   children: React.ReactNode;
@@ -30,13 +30,13 @@ export default function AuthGuard({ children }: AuthGuardProps) {
             name: data.user_id
           }));
         } else if (!pathname.startsWith("/sign")) {
-          // /signin이나 /signup으로 시작하는 경로는 리다이렉트하지 않음
+          // Don't redirect paths starting with /signin or /signup
           router.push("/signin");
         }
       } catch (error) {
         console.error("Auth check error:", error);
         if (!pathname.startsWith("/sign")) {
-          // /signin이나 /signup으로 시작하는 경로는 리다이렉트하지 않음
+          // Don't redirect paths starting with /signin or /signup
           router.push("/signin");
         }
       }
@@ -47,7 +47,7 @@ export default function AuthGuard({ children }: AuthGuardProps) {
     }
   }, [isAuthenticated, dispatch, router, pathname]);
 
-  // 인증되지 않은 상태에서도 로그인/회원가입 페이지는 보여줌
+  // Show login/signup pages even when not authenticated
   if (!isAuthenticated && !pathname.startsWith("/sign")) {
     return null;
   }

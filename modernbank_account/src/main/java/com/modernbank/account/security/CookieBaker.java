@@ -9,7 +9,7 @@ import jakarta.servlet.http.HttpServletRequest;
 
 public class CookieBaker {
     static public HttpHeaders buildCookieHeader() {
-            // 현재 요청에서 쿠키 가져오기
+            // Get cookies from current request
             HttpServletRequest request = ((ServletRequestAttributes) RequestContextHolder.getRequestAttributes()).getRequest();
             String jwtToken = null;
 
@@ -22,7 +22,7 @@ public class CookieBaker {
                 }
             }
 
-            // HTTP 헤더에 쿠키 추가
+            // Add cookies to HTTP headers
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
             if (jwtToken != null) {

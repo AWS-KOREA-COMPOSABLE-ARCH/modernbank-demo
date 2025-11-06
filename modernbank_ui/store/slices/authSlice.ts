@@ -10,7 +10,7 @@ interface AuthState {
   isAuthenticated: boolean;
 }
 
-// localStorage에서 상태를 불러오는 함수
+// Function to load state from localStorage
 const loadState = (): AuthState => {
   if (typeof window === 'undefined') {
     return { user: null, isAuthenticated: false };
@@ -58,31 +58,31 @@ const authSlice = createSlice({
         console.error('Error clearing auth state from localStorage:', error);
       }
     },
-    // 인증 상태 확인을 위한 리듀서
+    // Reducer for checking authentication state
     checkAuth: (state) => {
       try {
-        // 먼저 authState 키 확인 (Redux 저장방식)
+        // First check authState key (Redux storage method)
         const storedAuthState = localStorage.getItem('authState');
         if (storedAuthState) {
           const parsedState = JSON.parse(storedAuthState);
           state.user = parsedState.user;
           state.isAuthenticated = !!parsedState.user;
           
-          // retrieveCustomer와 호환성을 위해 'user' 키에도 저장
+          // Also save to 'user' key for compatibility with retrieveCustomer
           if (parsedState.user) {
             localStorage.setItem('user', JSON.stringify(parsedState.user));
           }
           return;
         }
         
-        // authState가 없으면 user 키 확인 (다른 컴포넌트 호환성)
+        // If authState doesn't exist, check user key (compatibility with other components)
         const storedUser = localStorage.getItem('user');
         if (storedUser) {
           const user = JSON.parse(storedUser);
           state.user = user;
           state.isAuthenticated = true;
           
-          // user 키의 정보를 authState로 마이그레이션 (일관성 유지)
+          // Migrate user key information to authState (maintain consistency)
           localStorage.setItem('authState', JSON.stringify({
             user,
             isAuthenticated: true

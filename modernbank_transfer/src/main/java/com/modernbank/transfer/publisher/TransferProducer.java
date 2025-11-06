@@ -50,7 +50,7 @@ public class TransferProducer {
                 TransferHistory g = result.getProducerRecord().value();
                 LOGGER.info("Sent message=[" + g.getCstmId() + "] with offset=[" + result.getRecordMetadata().offset() + "]");
             } else {
-                //만약 Amazon MSK에 타행 이체 정보 전달시 문제가 발생했다면 보상 트랜잭션 시작
+                // If there's a problem delivering inter-bank transfer information to Amazon MSK, start compensation transaction
                 transfer.setStsCd("2");
                 String wthdAcntNo = transfer.getWthdAcntNo();
                 int wthdAcntSeq = transfer.getWthdAcntSeq();

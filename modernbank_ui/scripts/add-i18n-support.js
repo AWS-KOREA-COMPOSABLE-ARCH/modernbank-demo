@@ -5,16 +5,16 @@
 const fs = require('fs');
 const path = require('path');
 
-// 처리할 파일 확장자들
+// File extensions to process
 const EXTENSIONS = ['.tsx', '.ts', '.jsx', '.js'];
 
-// 제외할 디렉토리들
+// Directories to exclude
 const EXCLUDE_DIRS = ['node_modules', '.next', 'dist', 'build'];
 
-// useLanguage import 문
+// useLanguage import statement
 const USE_LANGUAGE_IMPORT = `import { useLanguage } from "@/contexts/LanguageContext";`;
 
-// useLanguage 훅 사용 선언
+// useLanguage hook usage declaration
 const USE_LANGUAGE_HOOK = `  const { t } = useLanguage();`;
 
 /**
@@ -72,14 +72,14 @@ function hasKorean(content) {
 function addUseLanguageSupport(filePath) {
   let content = fs.readFileSync(filePath, 'utf8');
   
-  // React 컴포넌트가 아니거나 이미 useLanguage가 있으면 스킵
+  // Skip if not a React component or already has useLanguage
   if (!isReactComponent(content) || hasUseLanguage(content) || !hasKorean(content)) {
     return false;
   }
   
   console.log(`Processing: ${filePath}`);
   
-  // import 문 추가
+  // Add import statement
   const importMatch = content.match(/import.*from.*['"][^'"]+['"];?\s*\n/g);
   if (importMatch) {
     const lastImport = importMatch[importMatch.length - 1];
@@ -89,14 +89,14 @@ function addUseLanguageSupport(filePath) {
     content = content.slice(0, insertIndex) + USE_LANGUAGE_IMPORT + '\n' + content.slice(insertIndex);
   }
   
-  // useLanguage 훅 추가
+  // Add useLanguage hook
   const functionMatch = content.match(/export default function \w+\([^)]*\)\s*{/);
   if (functionMatch) {
     const hookInsertIndex = content.indexOf('{', content.indexOf(functionMatch[0])) + 1;
     content = content.slice(0, hookInsertIndex) + '\n' + USE_LANGUAGE_HOOK + '\n' + content.slice(hookInsertIndex);
   }
   
-  // 파일 저장
+  // Save file
   fs.writeFileSync(filePath, content, 'utf8');
   return true;
 }
@@ -132,7 +132,7 @@ function main() {
   console.log(`\nProcessed ${processedCount} files successfully!`);
 }
 
-// 스크립트 실행
+// Execute script
 if (require.main === module) {
   main();
 }

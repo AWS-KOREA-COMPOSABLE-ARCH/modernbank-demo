@@ -22,8 +22,8 @@ public class B2BTransferConsumer {
         LOGGER.info("Received Bank-To-Bank message: " + transfer.getWthdAcntNo() + ":" +transfer.getWthdAcntSeq());
 
 		try {
-            // 만약 타행 연동 인터페이스가 있다면 이 라인에 구현되어 있어야 하지만, 이 워크샵에서는 실제 타행에 대한 인터페이스는 생략되어 있습니다.
-            // 타행 이체가 성공 혹은 실패 했다는 가정하에 그 결과를 다시 Amazon MSK에 비동기식으로 전송합니다.
+            // If there was an inter-bank integration interface, it should be implemented in this line, but in this workshop, the actual inter-bank interface is omitted.
+            // Assuming that the inter-bank transfer succeeded or failed, the result is sent back to Amazon MSK asynchronously.
             b2btransferResultProducer.sendB2BTransferResultMessage(transfer);
             ack.acknowledge();
         } catch(Exception e) {

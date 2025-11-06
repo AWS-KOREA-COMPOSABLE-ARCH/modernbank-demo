@@ -22,15 +22,15 @@ func main() {
 
 	// Setup Gin router
 	r := gin.Default()
-	// 트레일링 슬래시 자동 제거 방지
+	// Prevent automatic trailing slash removal
 	r.RemoveExtraSlash = true
-	// 자동 리다이렉트 비활성화
+	// Disable automatic redirect
 	r.RedirectTrailingSlash = false
 	r.RedirectFixedPath = false
 
-	// Swagger UI 경로 추가
+	// Add Swagger UI path
 	//r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
-	// 요청이 들어올 때마다 URL을 출력
+	// Print URL for every incoming request
 	r.Use(func(c *gin.Context) {
 		log.Printf("Incoming request: %s %s", c.Request.Method, c.Request.URL.Path)
 		c.Next()

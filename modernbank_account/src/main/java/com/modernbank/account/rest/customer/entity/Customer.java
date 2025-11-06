@@ -15,7 +15,7 @@ public class Customer {
     private String cstmPn;
     private String cstmAdr;
     
-    /*이체 한도 정보*/
+    /* Transfer limit information */
     private Long oneTmTrnfLmt;
     private Long oneDyTrnfLmt;
 

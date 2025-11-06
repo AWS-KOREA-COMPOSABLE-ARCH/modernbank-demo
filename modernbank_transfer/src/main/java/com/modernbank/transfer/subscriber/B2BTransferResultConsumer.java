@@ -47,7 +47,7 @@ System.out.println("======> 서버로부터 받은 statusCode 값은: " + status
                 .acntNo(wthdAcntNo)
                 .seq(wthdAcntSeq)
                 .divCd("W")
-                // 임의의 이체 실패시 화면에서 status 값이 "2" 인 경우 보상트랜잭션, 그렇지 않은 경우 타행이체 확정처리
+                // If transfer fails arbitrarily and status value is "2" on screen, perform compensation transaction, otherwise confirm inter-bank transfer
                 .stsCd(statusCode.equals("2") ? "2" : "1")     
                 .build();
 
@@ -56,7 +56,7 @@ System.out.println("======> 서버로부터 받은 statusCode 값은: " + status
                 transactionHistory,
                 Integer.class
             );
-            // Status Code 확정 처리
+            // Finalize Status Code processing
             transferResult.setStsCd(statusCode.equals("2") ? "2" : "1");
             transferService.createTransferHistory(transferResult);     
 

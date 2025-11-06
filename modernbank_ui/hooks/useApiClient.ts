@@ -5,12 +5,12 @@ import { useCallback } from 'react';
 export function useApiClient() {
   const { language } = useLanguage();
 
-  // 현재 언어 설정에 맞는 헤더 생성
+  // Generate headers matching current language settings
   const createHeaders = useCallback((additionalHeaders: Record<string, string> = {}) => {
     return createApiHeaders(language, additionalHeaders);
   }, [language]);
 
-  // 언어 동기화된 API 요청 함수
+  // Language-synchronized API request function
   const request = useCallback(async (
     url: string, 
     options: RequestInit = {}
@@ -18,7 +18,7 @@ export function useApiClient() {
     return apiRequest(url, options, language);
   }, [language]);
 
-  // 편의 메서드들
+  // Convenience methods
   const get = useCallback(async (url: string, additionalHeaders: Record<string, string> = {}) => {
     return request(url, {
       method: 'GET',

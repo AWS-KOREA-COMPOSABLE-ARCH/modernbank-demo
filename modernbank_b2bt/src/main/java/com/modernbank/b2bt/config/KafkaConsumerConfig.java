@@ -47,8 +47,8 @@ public class KafkaConsumerConfig {
         factory.setRecordFilterStrategy(consumerRecord -> {
             long currentTimestamp = System.currentTimeMillis();
             long messageTimestamp = consumerRecord.timestamp();
-            // 발행된지 3초가 지난 토픽은 리스너가 무시하도록 설정한다.(for 데모용)
-            // Fault Injection Service로 B2BT Service down 시키는 것 대응
+            // Configure the listener to ignore topics that are older than 3 seconds (for demo purposes)
+            // Handle B2BT Service down by Fault Injection Service
             boolean isOld = (currentTimestamp - messageTimestamp > 3000);
             if (isOld) {
                 System.out.println("@@@@@@@@@@ Filtering out old message: " + consumerRecord.value());

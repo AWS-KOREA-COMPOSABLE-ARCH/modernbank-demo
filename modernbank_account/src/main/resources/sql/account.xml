@@ -31,7 +31,7 @@
  		VALUES(#{acntNo}, #{cstmId}, #{cstmNm}, #{acntNm}, TO_CHAR(CURRENT_TIMESTAMP,'YYYY-MM-DD HH24:MI:SS'))
  	</insert>
 
-	<!-- 거래완료데이터의 마지막 잔액조회	-->
+	<!-- Query last balance of completed transaction data -->
     <select id="selectCurrentAccountBalance" resultType="java.lang.Long"
             parameterType="com.modernbank.account.domain.entity.TransactionHistory">
  		SELECT ACNT_BLNC 
@@ -40,7 +40,7 @@
  		  AND SEQ = (SELECT COALESCE(MAX(SEQ),0) FROM TB_TRNS_HST WHERE ACNT_NO = #{acntNo} AND STS_CD = '1')
  	</select>
 
-	<!-- 거래이력저장 시 seq 반환 -->
+	<!-- Return seq when saving transaction history -->
 	<insert id="insertTransactionHistoryData" parameterType="com.modernbank.account.domain.entity.TransactionHistory">
 		<selectKey keyProperty="seq" resultType="int" order="BEFORE">
 			SELECT NEXTVAL('SEQ_ACCOUNT_TRANSACTION_HISTORY')

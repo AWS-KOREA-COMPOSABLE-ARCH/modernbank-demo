@@ -74,7 +74,7 @@ export default function ChatWindow({ closeChat }: { closeChat: () => void }) {
       if (data.type === "text") {
         setMessages(prev => {
           const lastMessage = prev[prev.length - 1];
-          // 마지막 메시지가 봇의 메시지이고 아직 완성되지 않았다면 내용 추가
+          // If the last message is from bot and not yet completed, add content
           if (lastMessage?.sender === "bot" && lastMessage?.partial) {
             const updatedMessages = [...prev.slice(0, -1)];
             updatedMessages.push({
@@ -83,7 +83,7 @@ export default function ChatWindow({ closeChat }: { closeChat: () => void }) {
             });
             return updatedMessages;
           } else {
-            // 새 메시지 시작
+            // Start new message
             return [...prev, {
               id: uuidv4(),
               sender: "bot",
@@ -94,7 +94,7 @@ export default function ChatWindow({ closeChat }: { closeChat: () => void }) {
         });
       }
     } catch  {
-      // JSON 파싱 실패 시 일반 텍스트로 처리
+      // Handle as plain text when JSON parsing fails
       setMessages(prev => {
         const lastMessage = prev[prev.length - 1];
         if (lastMessage?.sender === "bot" && lastMessage?.partial) {
@@ -245,6 +245,6 @@ export default function ChatWindow({ closeChat }: { closeChat: () => void }) {
     </div>
   );
 
-  // Portal을 사용하여 렌더링
+  // Render using Portal
   return mounted ? createPortal(chatWindow, document.body) : null;
 }

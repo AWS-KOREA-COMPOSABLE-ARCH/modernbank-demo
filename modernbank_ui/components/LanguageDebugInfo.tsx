@@ -18,7 +18,7 @@ export default function LanguageDebugInfo() {
   }, []);
 
   if (process.env.NODE_ENV !== 'development') {
-    return null; // 개발 환경에서만 표시
+    return null; // Show only in development environment
   }
 
   return (

@@ -19,9 +19,9 @@ type CreateUserRequest struct {
 }
 
 type ChangePasswordRequest struct {
-	//UserID      string `json:"user_id"`      // 사용자 ID
-	OldPassword string `json:"old_password"`   // 기존 비밀번호
-	NewPassword string `json:"new_password"`   // 새 비밀번호
+	//UserID      string `json:"user_id"`      // User ID
+	OldPassword string `json:"old_password"`   // Current password
+	NewPassword string `json:"new_password"`   // New password
 }
 
 func CreateUser(db *sql.DB) gin.HandlerFunc {
@@ -92,7 +92,7 @@ func CreateUser(db *sql.DB) gin.HandlerFunc {
 // ChangePassword allows users to update their password
 func ChangePassword(db *sql.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		userID := c.Param("user_id") // URL에서 user_id 추출
+		userID := c.Param("user_id") // Extract user_id from URL
 		var req ChangePasswordRequest
 		if err := c.ShouldBindJSON(&req); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request payload"})
@@ -124,21 +124,21 @@ func ChangePassword(db *sql.DB) gin.HandlerFunc {
 // GetUsername returns the username for a given user_id
 func GetUsername(db *sql.DB) gin.HandlerFunc {
     return func(c *gin.Context) {
-        userID := c.Param("user_id") // URL에서 user_id 파라미터 추출
+        userID := c.Param("user_id") // Extract user_id parameter from URL
 
-        // 데이터베이스에서 username 조회
+        // Query username from database
         var username string
         err := db.QueryRow("SELECT username FROM tb_user WHERE user_id = $1", userID).Scan(&username)
         
         if err != nil {
             if err == sql.ErrNoRows {
-                // 사용자를 찾을 수 없는 경우
+                // When user cannot be found
                 c.JSON(http.StatusNotFound, gin.H{
                     "error": "User not found",
                 })
                 return
             }
-            // 기타 데이터베이스 오류
+            // Other database errors
             c.JSON(http.StatusInternalServerError, gin.H{
                 "error": "Failed to retrieve username",
                 "details": err.Error(),
@@ -146,7 +146,7 @@ func GetUsername(db *sql.DB) gin.HandlerFunc {
             return
         }
 
-        // 성공적으로 username을 찾은 경우
+        // When username is successfully found
         c.JSON(http.StatusOK, gin.H{
             "user_id": userID,
             "username": username,

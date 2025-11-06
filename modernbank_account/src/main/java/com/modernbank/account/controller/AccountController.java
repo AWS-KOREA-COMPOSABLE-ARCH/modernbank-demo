@@ -71,7 +71,7 @@ public class AccountController {
     public TransactionResult withdrawal(@RequestBody TransactionHistory input) throws Exception {
         System.out.println("==> AccountController.withdrawal()");
         System.out.println("DivCD: " + input.getDivCd() + ", StatusCD: " + input.getStsCd()); 
-        //DivCd 정의할 것
+        // Define DivCd
         return accountService.withdrawOwnBankOrTransferOtherBank(input);
     }
 

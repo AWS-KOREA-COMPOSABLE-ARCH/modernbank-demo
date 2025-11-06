@@ -40,7 +40,7 @@ public class KafkaConsumerConfig {
     @Bean
     public ConcurrentKafkaListenerContainerFactory<String, Customer> customerKafkaListenerContainerFactory() {
         ConcurrentKafkaListenerContainerFactory<String, Customer> factory = new ConcurrentKafkaListenerContainerFactory<>();
-        // Listener의 AckMode를 수동으로 지정
+        // Set Listener's AckMode to manual
         factory.getContainerProperties().setAckMode(AckMode.MANUAL_IMMEDIATE);
         factory.setConsumerFactory(customerConsumerFactory());
         return factory;
@@ -61,7 +61,7 @@ public class KafkaConsumerConfig {
     @Bean
     public ConcurrentKafkaListenerContainerFactory<String, Account> accountKafkaListenerContainerFactory() {
         ConcurrentKafkaListenerContainerFactory<String, Account> factory = new ConcurrentKafkaListenerContainerFactory<>();
-        // Listener의 AckMode를 수동으로 지정
+        // Set Listener's AckMode to manual
         factory.getContainerProperties().setAckMode(AckMode.MANUAL_IMMEDIATE);
         factory.setConsumerFactory(accountConsumerFactory());
         return factory;
@@ -69,7 +69,7 @@ public class KafkaConsumerConfig {
     
     
     /**
-     * 이체한도 sub
+     * Transfer limit subscriber
      * @return
      */
     public ConsumerFactory<String, Customer> transferLimitConsumerFactory() {
@@ -85,13 +85,13 @@ public class KafkaConsumerConfig {
     }
 
     /**
-     * 이체한도 sub
+     * Transfer limit subscriber
      * @return
      */
     @Bean
     public ConcurrentKafkaListenerContainerFactory<String, Customer> transferLimitKafkaListenerContainerFactory() {
         ConcurrentKafkaListenerContainerFactory<String, Customer> factory = new ConcurrentKafkaListenerContainerFactory<>();
-        // Listener의 AckMode를 수동으로 지정
+        // Set Listener's AckMode to manual
         factory.getContainerProperties().setAckMode(AckMode.MANUAL_IMMEDIATE);
         factory.setConsumerFactory(transferLimitConsumerFactory());
         return factory;

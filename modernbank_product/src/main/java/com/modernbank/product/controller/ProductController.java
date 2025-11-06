@@ -32,7 +32,7 @@ public class ProductController {
     }
 
     /**
-     * 신규 계좌 상품 등록
+     * Register new account product
      */
     @PostMapping("/")
     @Operation(summary = "신규 계좌 상품 등록", description = "새로운 계좌 상품을 추가합니다.")
@@ -65,7 +65,7 @@ public class ProductController {
     }
 
     /**
-     * 모든 계좌 상품 목록 조회
+     * Retrieve all account product list
      */
     @GetMapping("/")
     @Operation(summary = "모든 상품 조회", description = "등록된 모든 계좌 상품을 조회합니다.")
@@ -87,7 +87,7 @@ public class ProductController {
     @Operation(summary = "특정 상품 삭제", description = "ID로 계좌 상품을 삭제합니다.")
     public ResponseEntity<String> deleteProductById(@PathVariable String id) {
         try {
-            // ID 존재 여부 확인
+            // Check if ID exists
             Product product = service.findProductById(id);
             if (product == null) {
                 logger.warn("Product not found with id: {}", id);
@@ -107,13 +107,13 @@ public class ProductController {
     }
 
     /**
-     * 특정 계좌 상품 수정
+     * Update specific account product
      */
     @PutMapping("/{id}")
     @Operation(summary = "특정 상품 수정", description = "ID로 계좌 상품 정보를 수정합니다.")
     public ResponseEntity<String> updateProductById(@RequestBody Product product) {
         try {
-            // 기존 상품 조회
+            // Find existing product
             Product existingProduct = service.findProductById(product.getId());
             if (existingProduct == null) {
                 logger.warn("Product not found with id: {}", product.getId());
@@ -122,7 +122,7 @@ public class ProductController {
                     .body("Product not found with id: " + product.getId());
             }
             logger.info(">> product :" + product.getId() + " : " + product.getName());
-            // 서비스 레이어 호출
+            // Call service layer
             String result = service.updateProductById(product);
             return ResponseEntity.ok(result);
         } catch (Exception e) {

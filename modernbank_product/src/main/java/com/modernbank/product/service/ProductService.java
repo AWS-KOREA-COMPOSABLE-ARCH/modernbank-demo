@@ -17,35 +17,35 @@ public class ProductService {
     }
 
     /**
-     * 계좌 상품 저장
+     * Save account product
      */
     public void saveProduct(Product product) {
         repository.save(product);
     }
 
     /**
-     * 특정 ID의 계좌 상품 조회
+     * Find account product by specific ID
      */
     public Product findProductById(String id) {
         return repository.findProductById(id);
     }
 
     /**
-     * 모든 계좌 상품 조회
+     * Find all account products
      */
     public List<Product> getAllProducts() {
         return repository.findAll();
     }
 
     /**
-     * 계좌 상품 삭제
+     * Delete account product
      */
     public String deleteProductById(String id) {
         return repository.deleteProductById(id);
     }
 
     /**
-     * 계좌 상품 수정
+     * Update account product
      * @param product
      * @return
      */

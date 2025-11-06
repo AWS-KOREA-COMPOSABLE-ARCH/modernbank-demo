@@ -10,7 +10,7 @@ interface AuthState {
   isAuthenticated: boolean;
 }
 
-// 클라이언트 환경에서 초기 상태 로드 함수
+// Function to load initial state in client environment
 const loadInitialState = (): AuthState => {
   if (typeof window !== "undefined") {
     try {
@@ -24,7 +24,7 @@ const loadInitialState = (): AuthState => {
   return { user: null, isAuthenticated: false };
 };
 
-// Slice 생성
+// Create Slice
 const authSlice = createSlice({
   name: "auth",
   initialState: loadInitialState(),
@@ -34,7 +34,7 @@ const authSlice = createSlice({
       state.user = action.payload.user;
       state.isAuthenticated = action.payload.isAuthenticated;
 
-      // 상태를 localStorage에 저장
+      // Save state to localStorage
       if (typeof window !== "undefined") {
         try {
           localStorage.setItem(

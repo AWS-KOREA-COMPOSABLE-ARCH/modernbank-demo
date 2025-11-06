@@ -17,7 +17,7 @@ func LoadConfig() (*Config, error) {
 	viper.SetConfigFile(".env")
 	viper.AutomaticEnv()
 
-	// .env 파일이 존재하면 로드, 없으면 환경 변수 사용
+	// Load .env file if it exists, otherwise use environment variables
 	if _, err := os.Stat(".env"); err == nil {
 		if err := viper.ReadInConfig(); err != nil {
 			return nil, fmt.Errorf("failed to read config file: %w", err)

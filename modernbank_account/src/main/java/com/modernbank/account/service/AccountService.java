@@ -184,8 +184,8 @@ public class AccountService {
         accountProducer.sendTransactionMessage(transactionHistory);
 
         /*********
-         * 아래 코드가 CQRS에 데이터를 넘기는 코드인데, 
-         * pending시 주석처리해야 할지 그냥 넘길지 확인 요
+         * The code below sends data to CQRS,
+         * Need to confirm whether to comment out during pending or just pass it
          */
         // 5) Send updated balance account information message
         Account account = Account.of(acntNo, transactionHistory.getAcntBlnc());

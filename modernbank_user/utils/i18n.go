@@ -73,16 +73,16 @@ func GetMessage(locale, key string, fallback ...string) string {
 // GetLocaleFromHeader extracts locale from Accept-Language header
 func GetLocaleFromHeader(acceptLanguage string) string {
 	if acceptLanguage == "" {
-		return "ko" // 기본값: 한국어
+		return "ko" // Default: Korean
 	}
 
 	acceptLanguageLower := strings.ToLower(acceptLanguage)
 
-	// 한국어가 포함되어 있으면 한국어 사용
+	// Use Korean if Korean is included
 	if strings.Contains(acceptLanguageLower, "ko") {
 		return "ko"
 	}
 
-	// 한국어가 없으면 영어 사용
+	// Use English if Korean is not present
 	return "en"
 }

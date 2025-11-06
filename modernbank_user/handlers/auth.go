@@ -23,7 +23,7 @@ type LoginRequest struct {
 }
 
 func init() {
-	// .env 파일이 있을 때만 로드
+	// Load only when .env file exists
 	if _, err := os.Stat(".env"); err == nil {
 		if loadErr := godotenv.Load(); loadErr != nil {
 			log.Fatal("Error loading .env file")
@@ -36,7 +36,7 @@ func init() {
 func LoginHandler(db *sql.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 
-		// OPTIONS 요청 처리
+		// Handle OPTIONS requests
 		if c.Request.Method == "OPTIONS" {
 			c.JSON(http.StatusOK, struct{}{})
 			return

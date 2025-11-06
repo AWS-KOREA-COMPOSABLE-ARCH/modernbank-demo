@@ -11,24 +11,24 @@ import (
 
 func SetupRoutes(r *gin.Engine) {
 	fmt.Println("setup route start...")
-	//CORS 추가
+	// Add CORS
 	fmt.Println("setting cors")
 	r.Use(middleware.CORSMiddleware())
 	// r.Use(cors.Default())
 	fmt.Println("cors end")
-    // 기본 경로를 /modernbank/users로 설정
+    // Set base path to /modernbank/users
     baseRouter := r.Group("/modernbank/user")
     {
 		baseRouter.OPTIONS("/", func(c *gin.Context) {
-            c.Status(204) // Preflight 요청에 대한 응답
+            c.Status(204) // Response for Preflight request
         })
 
         // Public routes
-		// 로그인
+		// Login
         baseRouter.POST("/login", handlers.LoginHandler(db.DB))
-		// 사용자 조회
+		// Get user
 		baseRouter.GET("/username/:user_id", handlers.GetUsername(db.DB))
-		// 사용자 생성
+		// Create user
         baseRouter.POST("", handlers.CreateUser(db.DB)) 
 
         // Protected routes
