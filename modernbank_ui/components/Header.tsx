@@ -59,49 +59,7 @@ export default function Header() {
   }, []);
 
   // Check product service status
-
-   useEffect(() => {
-    let isMounted = true;
-    
-    const checkProductServiceHealth = async () => {
-      if (!isMounted) return;
-      
-      if (isAuthenticated && user?.user_id) {
-        try {
-          const response = await fetch('/api/product/actuator/health', {
-            headers: {
-              'x-user-id': user.user_id,
-            },
-          });
-          
-          if (response.ok) {
-            const data = await response.json();
-            if (isMounted) {
-              setProductServiceStatus(data);
-            }
-          } else {
-            if (isMounted) {
-              setProductServiceStatus({ status: 'DOWN' });
-            }
-          }
-        } catch (error) {
-          console.error('Failed to check product service status:', error);
-          if (isMounted) {
-            setProductServiceStatus({ status: 'DOWN' });
-          }
-        }
-      }
-    };
-
-    checkProductServiceHealth();
-    // Check status every 10 seconds
-    const interval = setInterval(checkProductServiceHealth, 10000);
-    
-    return () => {
-      isMounted = false;
-      clearInterval(interval);
-    };
-  }, [isAuthenticated, user?.user_id]);
+  // TODO
   
   // Handle mobile menu closing
   useEffect(() => {
