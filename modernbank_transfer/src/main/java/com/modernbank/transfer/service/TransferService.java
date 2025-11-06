@@ -74,10 +74,7 @@ public class TransferService {
 
     @Transactional(rollbackFor = Exception.class)
     public int createTransferLimit(TransferLimit transferLimit) throws Exception {
-        System.out.println("send transferlimit start...");
-    	transferProducer.sendUpdatingTansferLimitMessage(transferLimit);
-        System.out.println("send transferlimit done...");
-    	return transferRepository.insertTransferLimit(transferLimit);
+        // TODO
     }
 
     public TransferLimit retrieveTransferLimit(String cstmId) throws Exception {

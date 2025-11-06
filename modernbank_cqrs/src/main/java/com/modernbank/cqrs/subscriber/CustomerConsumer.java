@@ -26,17 +26,7 @@ public class CustomerConsumer {
      */
     @KafkaListener(topics = "${creating.customer.topic.name}", containerFactory = "customerKafkaListenerContainerFactory")
     public void creatingCustomerListener(Customer customer, Acknowledgment ack) {
-        LOGGER.info("Received creating customer message: " + customer.getCstmId());
-        try {
-            /* Customer detail inquiry: Register customer data */
-            cqrsService.createCustomer(customer);
-
-            ack.acknowledge();
-            
-        } catch(Exception e) {
-            String msg = " A problem occurred while creating customer data or customer history.";
-            LOGGER.error(customer.getCstmId() + msg, e);
-        } 
+        // TODO
     }
     
 }

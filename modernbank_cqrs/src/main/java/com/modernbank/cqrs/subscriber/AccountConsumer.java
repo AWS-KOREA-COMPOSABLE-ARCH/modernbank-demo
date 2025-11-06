@@ -21,18 +21,7 @@ public class AccountConsumer {
     
     @KafkaListener(topics = "${creating.account.topic.name}", containerFactory = "accountKafkaListenerContainerFactory")
     public void creatingAccountListener(Account account, Acknowledgment ack) {
-        LOGGER.info("Received creating account message: " + account.getAcntNo());
-  
-        try {
-            /* Customer detail inquiry: Register account data */
-            cqrsService.createAccount(account);
- 
-            ack.acknowledge();  // Commit on success
-            
-        } catch(Exception e) {
-            String msg = " A problem occurred while registering account data or account history data.";
-            LOGGER.error(account.getAcntNo() + msg, e);
-        } 
+        // TODO
     }
     
     /**

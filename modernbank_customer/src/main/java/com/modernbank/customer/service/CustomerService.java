@@ -50,25 +50,7 @@ public class CustomerService {
 
     @Transactional(rollbackFor = Exception.class)
     public int createCustomer(Customer customer) throws Exception {
-        String cstmId = customer.getCstmId();
-        int result = 0;
-
-        if (existsCustomerId(cstmId))
-            throw new BusinessException("ID already exists.");
-        
-        customerRepository.insertCustomer(customer);
-
-        try {
-            System.out.println("---> called Customer Service create Customer, before restCall");
-            setTransferLimits(customer);
-            System.out.println("---> called Customer Service create Customer, after restCall");
-        } catch (Exception e) {
-            logger.error("Failed to set transfer limits: " + e.getMessage());
-            throw new BusinessException("The RESTful call to Transfer Service has failed. Canceling Customer service registration\nFailed to set transfer limits: " + e.getMessage());
-        }
-        logger.info("---> called Customer Service create Customer, before kafka send");
-        customerProducer.sendCreatingCustomerMessage(customer);
-        return result;
+        // TODO
     }
 
     @CircuitBreaker(name = "transferService", fallbackMethod = "fallbackSetTransferLimits")

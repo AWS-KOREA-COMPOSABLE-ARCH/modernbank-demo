@@ -19,19 +19,7 @@ public class CQRSServiceImpl implements CQRSService{
 
     @Override
     public Customer retrieveCustomerDetail(String cstmId) throws Exception {
-        Customer customer = null;
-        
-        // Retrieve customer information
-        customer = cqrsRepository.selectCustomer(Customer.builder().cstmId(cstmId).build());
-    
-        if (customer == null) 
-            throw new BusinessException("ID does not exist.");
-        
-        // Retrieve account list
-        List<Account> accountList = retrieveAccountList(cstmId);   
-        customer.addAllAccounts(accountList);
-        
-        return customer;
+        // TODO
     }
 
     /**

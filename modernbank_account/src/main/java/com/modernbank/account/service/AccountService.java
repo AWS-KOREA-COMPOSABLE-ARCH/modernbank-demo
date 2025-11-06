@@ -58,34 +58,7 @@ public class AccountService {
 
     @Transactional(rollbackFor = Exception.class)
     public Integer createAccount(Account account) throws Exception {
-        int result = 0;
-
-        // 1) Verify account number duplication
-        if(existsAccountNumber(account.getAcntNo())) {
-            Locale locale = LocaleContextHolder.getLocale();
-            String message = messageSource.getMessage("account.already.exists", null, locale);
-            throw new BusinessException(message);
-        }
-
-        // 2) Retrieve customer information (to store 'customer name' in the account table)
-        Customer customer = retrieveCustomerWithResilience(account.getCstmId());
-        account.setCstmNm(customer.getCstmNm());
-        
-        // 3) Create account
-        result = accountRepository.insertAccount(account);
-        accountRepository.insertTransactionHistoryData(TransactionHistory.builder()
-                .acntNo(account.getAcntNo())
-                .divCd("D")
-                .stsCd("1")
-                .trnsBrnch("Yeoksam Main Branch")
-                .trnsAmt(account.getAcntBlnc())
-                .acntBlnc(account.getAcntBlnc())
-                .build());
-
-        // 4) Send account information message
-        accountProducer.sendCreatingAccountMessage(account);
-
-        return result;
+        // TODO
     }
 
     @CircuitBreaker(name = "customerService", fallbackMethod = "fallbackRetrieveCustomer")
