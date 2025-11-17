@@ -1,4 +1,4 @@
-FROM openjdk:17-jdk-slim
+FROM eclipse-temurin:17-jre-alpine AS runtime
 
 # Add Author info
 #LABEL maintainer="euideok@amazon.com"
