@@ -36,38 +36,6 @@ public class B2BTransferResultConsumer {
     
     @KafkaListener(topics = "${b2b.transfer.result.topic.name}", containerFactory = "b2bTransferResultKafkaListenerContainerFactory")
     public void b2bTransferResultListener(TransferHistory transferResult, Acknowledgment ack) throws Exception {
-           String statusCode = transferResult.getStsCd();
-System.out.println("======> 서버로부터 받은 statusCode 값은: " + statusCode);
-
-        try {
-            String wthdAcntNo = transferResult.getWthdAcntNo();
-            int wthdAcntSeq = transferResult.getWthdAcntSeq();
-
-            TransactionHistory transactionHistory = TransactionHistory.builder()
-                .acntNo(wthdAcntNo)
-                .seq(wthdAcntSeq)
-                .divCd("W")
-                // If transfer fails arbitrarily and status value is "2" on screen, perform compensation transaction, otherwise confirm inter-bank transfer
-                .stsCd(statusCode.equals("2") ? "2" : "1")     
-                .build();
-
-                restTemplate.postForObject(
-                accountServiceUrl + "/withdrawals/confirm/",
-                transactionHistory,
-                Integer.class
-            );
-            // Finalize Status Code processing
-            transferResult.setStsCd(statusCode.equals("2") ? "2" : "1");
-            transferService.createTransferHistory(transferResult);     
-
-            // CQRS
-            transferProducer.sendCQRSTransferMessage(transferResult);
-
-            ack.acknowledge(); // Only change the read offset value of Kafka after all CRUD operations are completed.
-        } catch (Exception e) {
-            String msg = "An unexpected problem occurred in the system";
-            LOGGER.error(msg, e);
-            throw new SystemException(msg);
-        } 
+        // TODO
     }
 }
